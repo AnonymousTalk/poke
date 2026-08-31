@@ -148,19 +148,31 @@ input{font-family:inherit;}
 .room-row .rinfo{display:flex;flex-direction:column;gap:3px;min-width:0;}
 .room-row .rcode{font-family:'Fraunces',serif;color:var(--gold-soft);font-size:15px;letter-spacing:0.08em;}
 .room-row .rmeta{font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.room-row .rrow-actions{display:flex;gap:6px;flex-shrink:0;}
 .room-row .btn-mini{
   flex-shrink:0;padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;
   background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#241a08;border:none;
 }
 .room-row .btn-mini:disabled{opacity:0.4;background:rgba(255,255,255,0.08);color:var(--ink);}
+.room-row .btn-del{
+  flex-shrink:0;padding:9px 13px;border-radius:9px;font-size:12.5px;font-weight:600;
+  background:rgba(192,90,75,0.16);border:1px solid rgba(192,90,75,0.5);color:#e9b3a8;
+}
+.room-row .btn-del:hover{background:rgba(192,90,75,0.3);}
+.admin-banner{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:rgba(192,90,75,0.14);border:1px solid rgba(192,90,75,0.4);color:#e9b3a8;
+  font-size:11.5px;padding:8px 12px;border-radius:10px;margin-bottom:10px;
+}
+.admin-banner button{background:none;border:none;color:#e9b3a8;text-decoration:underline;font-size:11.5px;}
 
 /* ---------- Config gate ---------- */
-#configGate{
+#configGate,#adminGate{
   position:fixed;inset:0;z-index:50;
   background:rgba(6,5,4,0.92);
   display:none;align-items:center;justify-content:center;padding:20px;
 }
-#configGate.show{display:flex;}
+#configGate.show,#adminGate.show{display:flex;}
 .gate-card{
   width:min(520px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;
   max-height:88vh;overflow:auto;
@@ -441,10 +453,33 @@ input{font-family:inherit;}
   <div class="landing-card" style="margin-top:-6px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <label style="font-size:12.5px;color:var(--ink);letter-spacing:0.02em;">방을 선택해서 입장하기</label>
-      <button class="small-btn" id="btnRefreshRooms">새로고침</button>
+      <div style="display:flex;gap:12px;">
+        <button class="small-btn" id="btnAdminMode">관리자 모드</button>
+        <button class="small-btn" id="btnRefreshRooms">새로고침</button>
+      </div>
+    </div>
+    <div id="adminBanner" class="admin-banner" style="display:none;">
+      관리자 모드 — 모든 방을 볼 수 있고 삭제할 수 있어요.
+      <button id="btnAdminModeOff">종료</button>
     </div>
     <div class="room-list" id="publicRoomList"></div>
     <div class="hint" id="publicRoomsEmpty">아직 열려 있는 방이 없습니다. 방을 만들어 시작해보세요.</div>
+  </div>
+</div>
+
+<!-- ============ ADMIN GATE ============ -->
+<div id="adminGate">
+  <div class="gate-card">
+    <h2>관리자 모드</h2>
+    <p>비밀번호를 입력하면 생성된 모든 방을 목록에서 바로 삭제할 수 있습니다.</p>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="adminPwInput">관리자 비밀번호</label>
+      <input id="adminPwInput" type="password" maxlength="10" placeholder="비밀번호">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCloseAdminGate">닫기</button>
+      <button class="btn btn-primary" id="btnSubmitAdminPw">확인</button>
+    </div>
   </div>
 </div>
 
@@ -740,6 +775,8 @@ function showScreen(id){
 }
 
 /* ---------------- 공개 방 목록 ---------------- */
+let isAdminMode=false;
+let lastRoomsSnapshot={};
 function startPublicRoomsListener(){
   if(!db) return;
   stopPublicRoomsListener();
@@ -752,14 +789,23 @@ function stopPublicRoomsListener(){
   publicRoomsRef=null; publicRoomsHandler=null;
 }
 function renderPublicRooms(all){
+  lastRoomsSnapshot=all||{};
   const list=document.getElementById('publicRoomList');
   const emptyHint=document.getElementById('publicRoomsEmpty');
   if(!list||!emptyHint) return;
   list.innerHTML='';
-  const rooms=Object.entries(all)
-    .filter(([id,r])=>r && r.status==='lobby' && r.isPublic!==false)
+
+  const statusNames={lobby:'대기중',playing:'진행중',ended:'종료됨'};
+  let entries=Object.entries(all);
+  if(!isAdminMode){
+    entries=entries.filter(([id,r])=>r && r.status==='lobby' && r.isPublic!==false);
+  } else {
+    entries=entries.filter(([id,r])=>!!r);
+  }
+  const rooms=entries
     .sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0))
-    .slice(0,15);
+    .slice(0,isAdminMode?60:15);
+
   if(rooms.length===0){ emptyHint.style.display='block'; return; }
   emptyHint.style.display='none';
   rooms.forEach(([id,r])=>{
@@ -770,17 +816,68 @@ function renderPublicRooms(all){
     const full=count>=max;
     const row=document.createElement('div');
     row.className='room-row';
+    const statusLabel=isAdminMode? ' · '+(statusNames[r.status]||r.status||'-')+(r.isPublic===false?' · 비공개':'') : '';
     row.innerHTML=`
       <div class="rinfo">
         <div class="rcode">${escapeHtml(id)}</div>
-        <div class="rmeta">${hostP?escapeHtml(hostP.name)+' 님의 방 · ':''}${count}/${max}명 · 블라인드 ${r.blinds?r.blinds.sb+'/'+r.blinds.bb:'-'}</div>
+        <div class="rmeta">${hostP?escapeHtml(hostP.name)+' 님의 방 · ':''}${count}/${max}명 · 블라인드 ${r.blinds?r.blinds.sb+'/'+r.blinds.bb:'-'}${statusLabel}</div>
       </div>
-      <button class="btn-mini"${full?' disabled':''}>${full?'가득 참':'입장'}</button>`;
-    if(!full) row.querySelector('.btn-mini').onclick=()=>joinRoomByCode(id);
+      <div class="rrow-actions"></div>`;
+    const actions=row.querySelector('.rrow-actions');
+    if(!isAdminMode || r.status==='lobby'){
+      const joinBtn=document.createElement('button');
+      joinBtn.className='btn-mini';
+      joinBtn.textContent=full?'가득 참':'입장';
+      if(full) joinBtn.disabled=true;
+      else joinBtn.onclick=()=>joinRoomByCode(id);
+      actions.appendChild(joinBtn);
+    }
+    if(isAdminMode){
+      const delBtn=document.createElement('button');
+      delBtn.className='btn-del';
+      delBtn.textContent='삭제';
+      delBtn.onclick=()=>deleteRoomAsAdmin(id);
+      actions.appendChild(delBtn);
+    }
     list.appendChild(row);
   });
 }
+function deleteRoomAsAdmin(id){
+  if(!db) return;
+  if(!confirm('방 '+id+' 를 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
+  db.ref('rooms/'+id).remove()
+    .then(()=>{ renderPublicRooms(lastRoomsSnapshot); })
+    .catch(()=>{ alert('삭제에 실패했습니다. 잠시 후 다시 시도해주세요.'); });
+}
 document.getElementById('btnRefreshRooms').onclick=()=>{ startPublicRoomsListener(); };
+
+document.getElementById('btnAdminMode').onclick=()=>{
+  document.getElementById('adminPwInput').value='';
+  document.getElementById('adminGate').classList.add('show');
+  setTimeout(()=>document.getElementById('adminPwInput').focus(),50);
+};
+document.getElementById('btnCloseAdminGate').onclick=()=>{
+  document.getElementById('adminGate').classList.remove('show');
+};
+document.getElementById('btnSubmitAdminPw').onclick=()=>{
+  const pw=document.getElementById('adminPwInput').value.trim();
+  if(pw==='1183'){
+    isAdminMode=true;
+    document.getElementById('adminGate').classList.remove('show');
+    document.getElementById('adminBanner').style.display='flex';
+    renderPublicRooms(lastRoomsSnapshot);
+  } else {
+    alert('비밀번호가 올바르지 않습니다.');
+  }
+};
+document.getElementById('adminPwInput').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter') document.getElementById('btnSubmitAdminPw').click();
+});
+document.getElementById('btnAdminModeOff').onclick=()=>{
+  isAdminMode=false;
+  document.getElementById('adminBanner').style.display='none';
+  renderPublicRooms(lastRoomsSnapshot);
+};
 
 function resetTableRenderCache(){
   seatElements={}; commCardsKey='__init__'; heroCardsKey='__init__'; lastLobbyPlayerUids=null;
