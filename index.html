@@ -776,6 +776,7 @@ input{font-family:inherit;}
       <div id="authStatus" style="font-size:12.5px;color:var(--ink);min-width:0;flex:1;">게스트로 플레이 중</div>
       <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
         <button class="btn btn-ghost" id="btnOpenLogin" style="width:auto;padding:8px 12px;font-size:12.5px;">로그인</button>
+        <button class="btn btn-ghost" id="btnDeleteAccount" style="width:auto;padding:8px 12px;font-size:12.5px;display:none;color:#e9b3a8;">회원탈퇴</button>
         <button class="btn btn-ghost" id="btnOpenShop" style="width:auto;padding:8px 12px;font-size:12.5px;">🛒 상점</button>
         <button class="btn btn-ghost" id="btnOpenRank" style="width:auto;padding:8px 12px;font-size:12.5px;">🏆 순위</button>
       </div>
@@ -806,7 +807,7 @@ input{font-family:inherit;}
     <div class="room-list" id="publicRoomList"></div>
     <div class="hint" id="publicRoomsEmpty">아직 열려 있는 방이 없습니다. 방을 만들어 시작해보세요.</div>
     <div class="landing-note">
-      공개 방은 바로 입장, 비공개 방은 초대 코드가 필요합니다.<br>
+      공개 방은 바로 입장, 비공개 방은 초대 코드 필요 · 게임 중 방은 관전(파산)으로 입장<br>
       로그인하면 누적 칩·상점·순위를 이용할 수 있습니다 ·
       <button class="small-btn" id="btnOpenConfig">Firebase 설정</button>
     </div>
@@ -906,7 +907,7 @@ input{font-family:inherit;}
 <div id="accountsGate">
   <div class="gate-card" style="width:min(560px,96vw);">
     <h2>회원 관리</h2>
-    <p style="margin-bottom:8px;">비밀번호는 SHA-256 해시로만 저장되어 <b>평문으로 복원할 수 없습니다</b>. 해시 확인 · 비밀번호 재설정 · 누적 칩 수정이 가능합니다.</p>
+    <p style="margin-bottom:8px;">가입된 닉네임 · 비밀번호 · 누적 칩을 확인하고 수정할 수 있습니다. (비밀번호 평문 저장)</p>
     <div class="acc-admin-list" id="accountsAdminList"></div>
     <div class="hint" id="accountsAdminEmpty" style="display:none;">가입된 회원이 없습니다.</div>
     <div class="btn-row" style="margin-top:12px;">
@@ -1372,11 +1373,11 @@ function renderPublicRooms(all){
   if(!list||!emptyHint) return;
   list.innerHTML='';
 
-  const statusNames={lobby:'대기중',playing:'진행중',ended:'종료됨'};
+  const statusNames={lobby:'대기중',playing:'게임 중',ended:'종료됨'};
   let entries=Object.entries(all);
   if(!isAdminMode){
-    // 공개·비공개 모두 목록에 표시 (기본은 공개 생성, 비공개도 목록에 뜸)
-    entries=entries.filter(([id,r])=>r && r.status==='lobby');
+    // 대기중 + 게임 중 방 표시 (관전 입장 가능)
+    entries=entries.filter(([id,r])=>r && (r.status==='lobby' || r.status==='playing'));
   } else {
     entries=entries.filter(([id,r])=>!!r);
   }
@@ -1393,9 +1394,10 @@ function renderPublicRooms(all){
     const hostP=Object.values(players).find(p=>p.seat===0) || Object.values(players)[0];
     const full=count>=max;
     const isPrivate=r.isPublic===false;
+    const isPlaying=r.status==='playing';
     const row=document.createElement('div');
     row.className='room-row';
-    const statusLabel=isAdminMode? ' · '+(statusNames[r.status]||r.status||'-') : '';
+    const statusLabel=' · '+(statusNames[r.status]||r.status||'-');
     const privacyLabel=isPrivate? ' · 🔒 비공개' : ' · 공개';
     const titleHtml=isPrivate ? `<span class="lock">🔒</span>잠긴 방` : escapeHtml(id);
     row.innerHTML=`
@@ -1405,15 +1407,15 @@ function renderPublicRooms(all){
       </div>
       <div class="rrow-actions"></div>`;
     const actions=row.querySelector('.rrow-actions');
-    if(!isAdminMode || r.status==='lobby'){
+    if(!isAdminMode || r.status==='lobby' || r.status==='playing'){
       const joinBtn=document.createElement('button');
       joinBtn.className='btn-mini';
       if(full){ joinBtn.textContent='가득 참'; joinBtn.disabled=true; }
       else if(isPrivate){
-        joinBtn.textContent='입장';
+        joinBtn.textContent=isPlaying? '관전' : '입장';
         joinBtn.onclick=()=>openPrivateJoinModal(id);
       } else {
-        joinBtn.textContent='입장';
+        joinBtn.textContent=isPlaying? '관전' : '입장';
         joinBtn.onclick=()=>joinRoomByCode(id);
       }
       actions.appendChild(joinBtn);
@@ -1483,12 +1485,14 @@ async function renderAccountsAdmin(){
       const v=data[key]||{};
       const row=document.createElement('div');
       row.className='acc-admin-row';
+      const plainPw = (v.password!=null && v.password!=='') ? String(v.password)
+        : (v.passHash ? '(구버전 해시만 있음 · 재설정 필요)' : '(없음)');
       row.innerHTML=`
         <div class="acc-top">
           <span class="acc-nick"></span>
           <span style="font-size:11.5px;color:var(--ink);">key: ${escapeHtml(key)}</span>
         </div>
-        <div class="acc-hash">비밀번호 해시: ${escapeHtml(v.passHash||'(없음)')}</div>
+        <div class="acc-hash">비밀번호: <b style="color:var(--cream);font-family:inherit;font-size:13px;"></b></div>
         <div class="acc-fields">
           <div class="field">
             <label>누적 칩</label>
@@ -1500,8 +1504,10 @@ async function renderAccountsAdmin(){
             <input type="text" class="acc-new-pw" maxlength="32" placeholder="재설정할 비밀번호">
           </div>
           <button type="button" class="btn btn-ghost acc-reset-pw">비번 재설정</button>
+          <button type="button" class="btn btn-ghost acc-delete" style="color:var(--red);">계정 삭제</button>
         </div>`;
       row.querySelector('.acc-nick').textContent=v.nick||key;
+      row.querySelector('.acc-hash b').textContent=plainPw;
       row.querySelector('.acc-chips').value=v.totalChips||0;
       row.querySelector('.acc-save-chips').onclick=async ()=>{
         const chips=Math.max(0, Math.floor(Number(row.querySelector('.acc-chips').value)||0));
@@ -1516,12 +1522,22 @@ async function renderAccountsAdmin(){
         if(pw.length<4){ alert('새 비밀번호는 4자 이상이어야 합니다.'); return; }
         if(!confirm((v.nick||key)+' 비밀번호를 재설정할까요?')) return;
         try{
-          const passHash=await hashPass(pw);
-          await db.ref('accounts/'+key).update({passHash, updatedAt:Date.now()});
+          await db.ref('accounts/'+key).update({password:pw, passHash:null, updatedAt:Date.now()});
           row.querySelector('.acc-new-pw').value='';
-          row.querySelector('.acc-hash').textContent='비밀번호 해시: '+passHash;
+          row.querySelector('.acc-hash b').textContent=pw;
           toast((v.nick||key)+' 비밀번호가 재설정되었습니다');
         }catch(e){ alert('비밀번호 재설정 실패: '+(e.message||e)); }
+      };
+      row.querySelector('.acc-delete').onclick=async ()=>{
+        if(!confirm((v.nick||key)+' 계정을 삭제할까요?\n닉네임·비밀번호·누적 칩·보유 물품이 모두 삭제됩니다.')) return;
+        try{
+          await db.ref('accounts/'+key).remove();
+          if(myAccount && myAccount.key===key){
+            myAccount=null; saveAccountLocal(null); refreshAuthUI();
+          }
+          toast((v.nick||key)+' 계정이 삭제되었습니다');
+          renderAccountsAdmin();
+        }catch(e){ alert('계정 삭제 실패: '+(e.message||e)); }
       };
       list.appendChild(row);
     });
@@ -1628,17 +1644,20 @@ function loadAccountLocal(){ try{ return JSON.parse(localStorage.getItem(ACCOUNT
 function refreshAuthUI(){
   const status=document.getElementById('authStatus');
   const btn=document.getElementById('btnOpenLogin');
+  const delBtn=document.getElementById('btnDeleteAccount');
   const nickInput=document.getElementById('nickInput');
   const nickHint=document.getElementById('nickHint');
   if(!status||!btn) return;
   if(myAccount){
     status.innerHTML='로그인: <b style="color:var(--gold-soft)">'+escapeHtml(myAccount.nick)+'</b> · 누적 <b style="color:var(--gold-soft)">'+fmt(myAccount.totalChips||0)+'</b>';
     btn.textContent='로그아웃';
+    if(delBtn) delBtn.style.display='';
     if(nickInput){ nickInput.value=myAccount.nick; nickInput.readOnly=true; nickInput.style.opacity='0.75'; }
     if(nickHint) nickHint.textContent='(고유 닉네임 · 로그인됨)';
   } else {
     status.textContent='게스트로 플레이 중';
     btn.textContent='로그인';
+    if(delBtn) delBtn.style.display='none';
     if(nickInput){ nickInput.readOnly=false; nickInput.style.opacity=''; }
     if(nickHint) nickHint.textContent='(게스트 · 가입된 닉네임은 사용 불가)';
   }
@@ -1704,15 +1723,24 @@ document.getElementById('btnSubmitLogin').onclick=async ()=>{
   try{
     const ref=db.ref('accounts/'+key);
     const snap=await ref.get();
-    const passHash=await hashPass(pw);
     if(loginMode==='register'){
       if(snap.exists()){ err.textContent='이미 사용 중인 닉네임입니다.'; err.style.display='block'; return; }
-      await ref.set({nick, passHash, totalChips:0, gamesPlayed:0, inventory:{}, createdAt:Date.now(), updatedAt:Date.now()});
+      await ref.set({nick, password:pw, totalChips:0, gamesPlayed:0, inventory:{}, createdAt:Date.now(), updatedAt:Date.now()});
       myAccount={key, nick, totalChips:0, inventory:{}};
     } else {
       if(!snap.exists()){ err.textContent='존재하지 않는 닉네임입니다.'; err.style.display='block'; return; }
       const v=snap.val();
-      if(v.passHash!==passHash){ err.textContent='비밀번호가 올바르지 않습니다.'; err.style.display='block'; return; }
+      let ok=false;
+      if(v.password!=null && v.password!==''){
+        ok = String(v.password)===String(pw);
+      } else if(v.passHash){
+        // 구버전(해시) 계정 호환
+        const passHash=await hashPass(pw);
+        ok = v.passHash===passHash;
+        // 로그인 성공 시 평문으로 마이그레이션
+        if(ok) await ref.update({password:pw, passHash:null, updatedAt:Date.now()});
+      }
+      if(!ok){ err.textContent='비밀번호가 올바르지 않습니다.'; err.style.display='block'; return; }
       myAccount={key, nick:v.nick||nick, totalChips:v.totalChips||0, inventory:v.inventory||{}};
     }
     saveAccountLocal(myAccount); myName=myAccount.nick; refreshAuthUI();
@@ -1720,6 +1748,31 @@ document.getElementById('btnSubmitLogin').onclick=async ()=>{
     toast(myAccount.nick+'님, 환영합니다');
   }catch(e){ err.textContent='실패: '+(e.message||e); err.style.display='block'; }
   finally{ btn.disabled=false; }
+};
+
+document.getElementById('btnDeleteAccount').onclick=async ()=>{
+  if(!myAccount){ alert('로그인 상태가 아닙니다.'); return; }
+  if(!requireReady()) return;
+  const nick=myAccount.nick;
+  if(!confirm('정말 회원탈퇴 할까요?\n\n· 닉네임 "'+nick+'" 삭제\n· 비밀번호 삭제\n· 누적 칩·보유 물품 삭제\n\n이 작업은 되돌릴 수 없습니다.')) return;
+  const pw=prompt('확인을 위해 비밀번호를 입력해주세요.');
+  if(pw==null) return;
+  try{
+    const ref=db.ref('accounts/'+myAccount.key);
+    const snap=await ref.get();
+    if(!snap.exists()){
+      myAccount=null; saveAccountLocal(null); refreshAuthUI();
+      alert('이미 삭제된 계정입니다.'); return;
+    }
+    const v=snap.val();
+    let ok=false;
+    if(v.password!=null && v.password!=='') ok=String(v.password)===String(pw);
+    else if(v.passHash){ ok=(v.passHash===await hashPass(pw)); }
+    if(!ok){ alert('비밀번호가 올바르지 않습니다.'); return; }
+    await ref.remove();
+    myAccount=null; saveAccountLocal(null); refreshAuthUI();
+    toast(nick+' 계정이 탈퇴 처리되었습니다');
+  }catch(e){ alert('회원탈퇴 실패: '+(e.message||e)); }
 };
 
 /* ---------------- 순위 ---------------- */
@@ -1982,11 +2035,21 @@ async function applyCareerChips(room){
   await Promise.all(tasks);
 }
 
-function currentPlayerPayload(seat){
+function currentPlayerPayload(seat, opts){
+  opts=opts||{};
+  const spectating=!!opts.spectating;
   return {
-    name:myName, seat, chips:STARTING_TABLE_CHIPS, isAI:false, connected:true, folded:false, allIn:false,
-    currentBet:0, totalBet:0, hasActed:false, busted:false, cards:null, uidJoinedAt:Date.now(),
-    accountKey: myAccount? myAccount.key:null
+    name:myName, seat,
+    chips: spectating? 0 : STARTING_TABLE_CHIPS,
+    isAI:false, connected:true,
+    folded: spectating? true : false,
+    allIn:false,
+    currentBet:0, totalBet:0,
+    hasActed: spectating? true : false,
+    busted: spectating? true : false,
+    cards:null, uidJoinedAt:Date.now(),
+    accountKey: myAccount? myAccount.key:null,
+    spectating: spectating? true : false
   };
 }
 
@@ -2064,8 +2127,15 @@ async function joinRoomByCode(code){
     let freeSeat=-1;
     for(let s=0;s<(room.maxPlayers||8);s++){ if(!occupied.includes(s)){ freeSeat=s; break; } }
     if(freeSeat===-1){ alert('방이 가득 찼습니다.'); return; }
-    if(room.status!=='lobby'){ alert('이미 게임이 진행 중인 방입니다. 잠시 후 다시 시도해주세요.'); return; }
-    await ref.child('players/'+myUid).set(currentPlayerPayload(freeSeat));
+    if(room.status==='ended'){ alert('이미 종료된 방입니다.'); return; }
+    if(room.status==='playing'){
+      // 진행 중 입장 = 관전 (파산 상태로 착석, 이번 핸드에는 참여하지 않음)
+      await ref.child('players/'+myUid).set(currentPlayerPayload(freeSeat, {spectating:true}));
+    } else if(room.status==='lobby'){
+      await ref.child('players/'+myUid).set(currentPlayerPayload(freeSeat));
+    } else {
+      alert('입장할 수 없는 방 상태입니다.'); return;
+    }
   }
   roomId=code;
   roomRef=ref;
@@ -2073,7 +2143,9 @@ async function joinRoomByCode(code){
   resetTableRenderCache();
   setupPresence(existing?existing.seat:undefined);
   subscribeRoom();
-  showScreen('screen-lobby');
+  // 게임 중이면 테이블, 아니면 대기실 (onRoomUpdate에서도 전환됨)
+  if(room.status==='playing') showScreen('screen-table');
+  else showScreen('screen-lobby');
 }
 
 function requireReady(){
@@ -3048,11 +3120,13 @@ function renderTable(prev,room){
     el.dealerBtn.style.display = room.dealerSeat===s ? 'flex' : 'none';
     el.nameText.textContent=p.name;
     el.botBadge.style.display = p.isAI ? 'inline' : 'none';
-    el.chipsDiv.textContent = p.busted? '파산' : fmt(p.chips)+' 칩';
+    el.chipsDiv.textContent = p.spectating? '관전' : (p.busted? '파산' : fmt(p.chips)+' 칩');
 
     // 상태 배지 (폴드 / 체크 / 올인) — 다른 플레이어의 상황을 한눈에 보이도록
     let stText='', stClass='';
-    if(p.busted){
+    if(p.spectating){
+      stText='관전'; stClass='st-check';
+    } else if(p.busted){
       stText='';
     } else if(p.folded){
       stText='폴드'; stClass='st-fold';
@@ -3127,7 +3201,7 @@ function renderTable(prev,room){
   const heroChipsEl=document.getElementById('heroChips');
   if(me){
     heroChipsEl.style.display='';
-    heroChipsEl.textContent = me.busted? '파산' : ('내 칩 '+fmt(me.chips));
+    heroChipsEl.textContent = me.spectating? '관전 중' : (me.busted? '파산' : ('내 칩 '+fmt(me.chips)));
   } else {
     heroChipsEl.style.display='none';
   }
@@ -3675,6 +3749,8 @@ document.getElementById('btnBackLobby').onclick=async ()=>{
       updates['players/'+u+'/busted']=false;
       updates['players/'+u+'/cards']=null;
       updates['players/'+u+'/folded']=false;
+      updates['players/'+u+'/hasActed']=false;
+      updates['players/'+u+'/spectating']=false;
     });
     await roomRef.update(updates);
   }
