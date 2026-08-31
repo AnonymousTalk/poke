@@ -767,7 +767,7 @@ input{font-family:inherit;}
       </div>
     </div>
     <div class="field">
-      <label for="nickInput">닉네임 <span id="nickHint" style="font-weight:400;opacity:0.75;">(게스트 · 중복 가능)</span></label>
+      <label for="nickInput">닉네임 <span id="nickHint" style="font-weight:400;opacity:0.75;">(게스트 · 가입된 닉네임은 사용 불가)</span></label>
       <input id="nickInput" maxlength="10" placeholder="테이블에서 보일 이름">
     </div>
     <label class="check-row" style="cursor:pointer;">
@@ -1518,8 +1518,26 @@ function refreshAuthUI(){
     status.textContent='게스트로 플레이 중';
     btn.textContent='로그인';
     if(nickInput){ nickInput.readOnly=false; nickInput.style.opacity=''; }
-    if(nickHint) nickHint.textContent='(게스트 · 중복 가능)';
+    if(nickHint) nickHint.textContent='(게스트 · 가입된 닉네임은 사용 불가)';
   }
+}
+/** 게스트가 이미 회원가입된 닉네임을 쓰는지 검사. 사용 가능하면 true */
+async function ensureGuestNickAvailable(nick){
+  if(myAccount) return true;
+  if(!db) return true;
+  const name=(nick||'').trim();
+  if(!name){ alert('닉네임을 입력해주세요.'); return false; }
+  try{
+    const snap=await db.ref('accounts/'+nickKey(name)).get();
+    if(snap.exists()){
+      alert('이미 회원가입된 닉네임입니다. 로그인하거나 다른 닉네임을 사용해주세요.');
+      return false;
+    }
+  }catch(e){
+    // accounts 읽기 실패 시에도 입장 자체는 막지 않되, 가능하면 경고
+    console.warn('nick check failed', e);
+  }
+  return true;
 }
 async function restoreAccountSession(){
   const saved=loadAccountLocal();
@@ -1875,7 +1893,10 @@ document.getElementById('btnSubmitPrivateJoin').onclick=async ()=>{
 document.getElementById('btnCreateRoom').onclick=async ()=>{
   if(!requireReady()) return;
   if(myAccount) myName=myAccount.nick;
-  else myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+  else {
+    myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+    if(!(await ensureGuestNickAvailable(myName))) return;
+  }
   const id=roomCode();
   const seat=0;
   const makePrivate=document.getElementById('privateCheck').checked;
@@ -1906,7 +1927,10 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
 async function joinRoomByCode(code){
   if(!requireReady()) return;
   if(myAccount) myName=myAccount.nick;
-  else myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+  else {
+    myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+    if(!(await ensureGuestNickAvailable(myName))) return;
+  }
   const ref=db.ref('rooms/'+code);
   const snap=await ref.get();
   if(!snap.exists()){ alert('존재하지 않는 방 코드입니다.'); return; }
