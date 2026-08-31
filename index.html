@@ -260,21 +260,33 @@ input{font-family:inherit;}
 @keyframes dealIn{from{opacity:0;transform:translateY(-14px) scale(0.85);}to{opacity:1;transform:none;}}
 
 .seat{
-  position:absolute;width:118px;transform:translate(-50%,-50%);
+  position:absolute;width:136px;transform:translate(-50%,-50%);
   display:flex;flex-direction:column;align-items:center;gap:5px;z-index:4;
 }
 .seat-card{
   width:100%;background:rgba(20,16,12,0.86);border:1px solid var(--line);border-radius:12px;
-  padding:8px 8px 7px;text-align:center;backdrop-filter:blur(2px);
+  padding:9px 9px 8px;text-align:center;backdrop-filter:blur(2px);
 }
 .seat.hero .seat-card{border-color:rgba(231,205,140,0.55);box-shadow:0 0 0 1px rgba(231,205,140,0.28);}
 .seat.turn .seat-card{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,75,0.35),0 0 18px rgba(201,162,75,0.35);}
-.seat.folded .seat-card{opacity:0.42;}
+.seat.folded .seat-card{opacity:0.55;}
 .seat.empty .seat-card{opacity:0.35;border-style:dashed;}
 .seat-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .seat-name .bot{color:var(--gold-soft);font-size:10px;margin-left:3px;}
 .seat.hero .seat-name{color:var(--gold-soft);}
-.seat-chips{font-size:11px;color:var(--gold-soft);margin-top:1px;}
+.seat-chips{
+  font-size:13px;font-weight:700;color:var(--gold-soft);margin-top:5px;
+  background:rgba(0,0,0,0.34);border:1px solid rgba(201,162,75,0.35);
+  border-radius:20px;padding:3px 11px;display:inline-block;letter-spacing:0.01em;
+}
+.seat.folded .seat-chips{color:var(--ink);border-color:var(--line);}
+.seat-status{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.02em;
+  padding:2px 9px;border-radius:20px;margin-top:4px;
+}
+.seat-status.st-fold{background:rgba(192,90,75,0.18);color:#e9b3a8;border:1px solid rgba(192,90,75,0.5);}
+.seat-status.st-check{background:rgba(255,255,255,0.1);color:var(--cream);border:1px solid var(--line);}
+.seat-status.st-allin{background:linear-gradient(180deg,#c05a4b,#8f382b);color:#fff2ee;border:1px solid rgba(255,255,255,0.25);}
 .seat-cards{display:flex;gap:4px;justify-content:center;margin-top:6px;}
 .seat-cards .card{width:32px;height:45px;font-size:13px;border-radius:5px;font-weight:700;}
 .seat.hero .seat-cards .card{box-shadow:0 0 0 1px var(--gold-soft),0 3px 10px rgba(0,0,0,0.45);}
@@ -314,6 +326,12 @@ input{font-family:inherit;}
   display:flex;flex-direction:column;align-items:center;gap:10px;
   padding:10px 12px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);
+}
+.hero-chips{
+  font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--gold-soft);
+  background:rgba(0,0,0,0.55);border:1px solid rgba(201,162,75,0.5);
+  border-radius:20px;padding:5px 16px;letter-spacing:0.02em;
+  box-shadow:0 4px 14px rgba(0,0,0,0.4);
 }
 .hero-hand{display:flex;gap:10px;}
 .hero-hand .card{
@@ -364,6 +382,17 @@ input{font-family:inherit;}
 .overlay-card h2{font-family:'Fraunces',serif;color:var(--gold-soft);margin:0 0 10px;font-size:24px;}
 .overlay-card p{color:var(--ink);font-size:13.5px;line-height:1.7;margin-bottom:16px;}
 
+.handrank-card{width:min(480px,94vw);max-height:82vh;overflow-y:auto;text-align:left;}
+.handrank-card h2{text-align:center;}
+.hr-list{display:flex;flex-direction:column;gap:9px;margin-bottom:16px;}
+.hr-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:12px;padding:8px 10px;}
+.hr-rank{width:20px;flex-shrink:0;text-align:center;font-family:'Fraunces',serif;color:var(--gold-soft);font-weight:700;font-size:13px;}
+.hr-cards{display:flex;gap:3px;flex-shrink:0;}
+.hr-cards .card{width:26px;height:36px;font-size:10.5px;border-radius:4px;}
+.hr-info{min-width:0;}
+.hr-info .hr-name{font-size:13px;font-weight:700;color:var(--cream);}
+.hr-info .hr-desc{font-size:11px;color:var(--ink);margin-top:2px;line-height:1.4;}
+
 .muted-btn{
   position:fixed;bottom:12px;right:12px;z-index:15;
   background:rgba(0,0,0,0.5);border:1px solid var(--line);color:var(--cream);
@@ -371,11 +400,13 @@ input{font-family:inherit;}
 }
 
 @media (max-width:560px){
-  .seat{width:88px;}
+  .seat{width:104px;}
   .seat-name{font-size:10.5px;}
-  .seat-chips{font-size:9.5px;}
+  .seat-chips{font-size:10.5px;padding:2px 9px;margin-top:4px;}
+  .seat-status{font-size:9px;padding:1px 7px;margin-top:3px;}
   .card{width:32px;height:46px;font-size:13px;}
   .hero-hand .card{width:46px;height:66px;font-size:17px;}
+  .hero-chips{font-size:13px;padding:4px 13px;}
   .felt-oval{border-width:10px;}
 }
 </style>
@@ -473,6 +504,7 @@ input{font-family:inherit;}
     <div class="topbar">
       <div class="roomtag">방 코드 <b id="tblRoomCode">-----</b> · <span id="tblBlinds">10/20</span></div>
       <div class="topbar-actions">
+        <button class="icon-btn" id="btnHandRank">족보</button>
         <button class="icon-btn" id="btnSound">🔊</button>
         <button class="icon-btn" id="btnLeaveTable">나가기</button>
       </div>
@@ -489,6 +521,7 @@ input{font-family:inherit;}
     <div class="toast-stack" id="toastStack"></div>
 
     <div class="hero-bar">
+      <div class="hero-chips" id="heroChips">내 칩 0</div>
       <div class="hero-hand" id="heroHand"></div>
       <div class="raise-panel" id="raisePanel">
         <div class="amt-row"><span>레이즈 금액</span><b id="raiseAmtLabel">0</b></div>
@@ -522,6 +555,14 @@ input{font-family:inherit;}
         <h2>게임 종료</h2>
         <p id="goBody"></p>
         <button class="btn btn-primary" id="btnBackLobby">대기실로</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="handRankOverlay">
+      <div class="overlay-card handrank-card">
+        <h2>카드 족보</h2>
+        <div class="hr-list" id="hrList"></div>
+        <button class="btn btn-primary" id="btnHrClose">닫기</button>
       </div>
     </div>
   </div>
@@ -1555,6 +1596,7 @@ function getOrCreateSeatEl(layer,s){
   const botBadge=document.createElement('span'); botBadge.className='bot'; botBadge.textContent='AI'; botBadge.style.display='none';
   nameDiv.appendChild(nameText); nameDiv.appendChild(botBadge);
   const emptyLabel=document.createElement('div'); emptyLabel.className='seat-name'; emptyLabel.textContent='빈 좌석'; emptyLabel.style.display='none';
+  const statusDiv=document.createElement('div'); statusDiv.className='seat-status'; statusDiv.style.display='none';
   const chipsDiv=document.createElement('div'); chipsDiv.className='seat-chips';
   const cardsRow=document.createElement('div'); cardsRow.className='seat-cards';
   const betDiv=document.createElement('div'); betDiv.className='bet-chip'; betDiv.style.display='none';
@@ -1565,6 +1607,7 @@ function getOrCreateSeatEl(layer,s){
   card.appendChild(dealerBtn);
   card.appendChild(nameDiv);
   card.appendChild(emptyLabel);
+  card.appendChild(statusDiv);
   card.appendChild(chipsDiv);
   card.appendChild(cardsRow);
   card.appendChild(betDiv);
@@ -1572,7 +1615,7 @@ function getOrCreateSeatEl(layer,s){
   root.appendChild(card);
   layer.appendChild(root);
 
-  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,cardsKey:'__init__',turnKey:null,lowTimer:null};
+  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,statusDiv,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,cardsKey:'__init__',turnKey:null,lowTimer:null};
   seatElements[s]=obj;
   return obj;
 }
@@ -1618,6 +1661,7 @@ function renderTable(prev,room){
       el.root.classList.remove('folded','turn','hero');
       el.nameDiv.style.display='none';
       el.emptyLabel.style.display='block';
+      el.statusDiv.style.display='none';
       el.chipsDiv.style.display='none';
       el.dealerBtn.style.display='none';
       el.betDiv.style.display='none';
@@ -1640,6 +1684,25 @@ function renderTable(prev,room){
     el.nameText.textContent=p.name;
     el.botBadge.style.display = p.isAI ? 'inline' : 'none';
     el.chipsDiv.textContent = p.busted? '파산' : fmt(p.chips)+' 칩';
+
+    // 상태 배지 (폴드 / 체크 / 올인) — 다른 플레이어의 상황을 한눈에 보이도록
+    let stText='', stClass='';
+    if(p.busted){
+      stText='';
+    } else if(p.folded){
+      stText='폴드'; stClass='st-fold';
+    } else if(p.allIn){
+      stText='올인'; stClass='st-allin';
+    } else if(room.status==='playing' && game.stage && game.stage!=='lobby' && p.hasActed && (p.currentBet||0)===0){
+      stText='체크'; stClass='st-check';
+    }
+    if(stText){
+      el.statusDiv.textContent=stText;
+      el.statusDiv.className='seat-status '+stClass;
+      el.statusDiv.style.display='inline-block';
+    } else {
+      el.statusDiv.style.display='none';
+    }
 
     const showFace = room.status!=='playing' ? false : (game.stage==='showdown' && !p.folded) || isHero;
     const cardsKey = (p.cards? p.cards.join(','):'none')+'|'+showFace;
@@ -1677,6 +1740,15 @@ function renderTable(prev,room){
       }
       el.turnKey=turnKey;
     }
+  }
+
+  // 내 칩 표시 — 항상 카드 위쪽(hero-bar)에 떠 있어 카드에 가려지지 않는다
+  const heroChipsEl=document.getElementById('heroChips');
+  if(me){
+    heroChipsEl.style.display='';
+    heroChipsEl.textContent = me.busted? '파산' : ('내 칩 '+fmt(me.chips));
+  } else {
+    heroChipsEl.style.display='none';
   }
 
   // 히어로 핸드 (하단 큰 카드) — 실제로 바뀐 경우에만 다시 그린다
@@ -1800,6 +1872,45 @@ document.getElementById('btnSound').onclick=()=>{
   const en=!SFX.isEnabled();
   SFX.setEnabled(en);
   document.getElementById('btnSound').textContent = en? '🔊':'🔇';
+};
+
+/* ---------------- 카드 족보 모달 ---------------- */
+const HAND_RANKS=[
+  {name:'로열 플러시',desc:'같은 무늬로 이어진 A-K-Q-J-10',cards:['Ah','Kh','Qh','Jh','Th']},
+  {name:'스트레이트 플러시',desc:'같은 무늬로 이어진 연속된 5장',cards:['9s','8s','7s','6s','5s']},
+  {name:'포카드',desc:'같은 숫자 카드 4장',cards:['Ah','Ad','As','Ac','Kh']},
+  {name:'풀하우스',desc:'트리플 + 원페어 조합',cards:['Kh','Kd','Ks','7c','7d']},
+  {name:'플러시',desc:'무늬가 모두 같은 5장 (순서 무관)',cards:['Ah','Jh','9h','6h','2h']},
+  {name:'스트레이트',desc:'무늬 상관없이 이어진 연속된 5장',cards:['Ts','9d','8h','7c','6s']},
+  {name:'트리플',desc:'같은 숫자 카드 3장',cards:['8h','8d','8s','Kc','4h']},
+  {name:'투페어',desc:'페어 두 쌍',cards:['Qh','Qd','4s','4h','9c']},
+  {name:'원페어',desc:'같은 숫자 카드 2장',cards:['Jh','Jd','8s','5h','2c']},
+  {name:'하이카드',desc:'위 조합이 없을 때, 가장 높은 카드로 비교',cards:['Ah','Ks','8d','6h','3c']}
+];
+function buildHandRankList(){
+  const list=document.getElementById('hrList');
+  if(list.dataset.built) return;
+  HAND_RANKS.forEach((hr,i)=>{
+    const row=document.createElement('div'); row.className='hr-row';
+    const rankNum=document.createElement('div'); rankNum.className='hr-rank'; rankNum.textContent=(i+1);
+    const cardsWrap=document.createElement('div'); cardsWrap.className='hr-cards';
+    hr.cards.forEach(c=>cardsWrap.appendChild(cardEl(c,true,true)));
+    const info=document.createElement('div'); info.className='hr-info';
+    const nameDiv=document.createElement('div'); nameDiv.className='hr-name'; nameDiv.textContent=hr.name;
+    const descDiv=document.createElement('div'); descDiv.className='hr-desc'; descDiv.textContent=hr.desc;
+    info.appendChild(nameDiv); info.appendChild(descDiv);
+    row.appendChild(rankNum); row.appendChild(cardsWrap); row.appendChild(info);
+    list.appendChild(row);
+  });
+  list.dataset.built='1';
+}
+document.getElementById('btnHandRank').onclick=()=>{
+  SFX.click();
+  buildHandRankList();
+  document.getElementById('handRankOverlay').classList.add('show');
+};
+document.getElementById('btnHrClose').onclick=()=>{
+  document.getElementById('handRankOverlay').classList.remove('show');
 };
 
 document.getElementById('btnSdClose').onclick=()=>{
