@@ -202,12 +202,24 @@ input{font-family:inherit;}
 .admin-banner button{background:none;border:none;color:#e9b3a8;text-decoration:underline;font-size:11.5px;}
 
 /* ---------- Config gate ---------- */
-#configGate,#adminGate,#privateJoinGate,#loginGate,#shopGate,#rankGate{
+#configGate,#adminGate,#privateJoinGate,#loginGate,#shopGate,#rankGate,#accountsGate,#giftGate{
   position:fixed;inset:0;z-index:50;
   background:rgba(6,5,4,0.92);
   display:none;align-items:center;justify-content:center;padding:20px;
 }
-#configGate.show,#adminGate.show,#privateJoinGate.show,#loginGate.show,#shopGate.show,#rankGate.show{display:flex;}
+#configGate.show,#adminGate.show,#privateJoinGate.show,#loginGate.show,#shopGate.show,#rankGate.show,#accountsGate.show,#giftGate.show{display:flex;}
+.acc-admin-list{max-height:min(420px,55vh);overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin:12px 0;}
+.acc-admin-row{
+  padding:12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,0.04);
+  display:flex;flex-direction:column;gap:8px;
+}
+.acc-admin-row .acc-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.acc-admin-row .acc-nick{font-weight:700;color:var(--cream);font-size:14px;}
+.acc-admin-row .acc-hash{font-size:11px;color:var(--ink);word-break:break-all;font-family:monospace;opacity:0.85;}
+.acc-admin-row .acc-fields{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;}
+.acc-admin-row .acc-fields .field{margin:0;flex:1;min-width:110px;}
+.acc-admin-row .acc-fields input{padding:8px 10px;font-size:13px;}
+.acc-admin-row .acc-fields .btn{width:auto;padding:8px 12px;font-size:12.5px;}
 .room-row .rcode .lock{margin-right:4px;}
 .lobby-private-hint{
   display:none;margin-bottom:12px;padding:10px 14px;border-radius:12px;text-align:center;
@@ -280,7 +292,9 @@ input{font-family:inherit;}
 .seat-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
 .seat-row .tag{font-size:11px;color:var(--ink);border:1px solid var(--line);padding:2px 7px;border-radius:20px;}
 .seat-row .empty{color:var(--ink);font-style:normal;opacity:0.6;}
-.seat-row .rm{background:none;border:none;color:var(--red);font-size:12px;padding:4px 8px;}
+.seat-row .rm{background:none;border:none;color:var(--red);font-size:12px;padding:4px 8px;cursor:pointer;}
+.seat-row .gift{background:none;border:none;color:var(--gold-soft);font-size:12px;padding:4px 8px;cursor:pointer;}
+.seat-row .seat-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
 .lobby-actions{display:flex;flex-direction:column;gap:10px;}
 .lobby-actions .btn-row{gap:10px;}
 .hint{font-size:12px;color:var(--ink);text-align:center;margin-top:2px;}
@@ -783,8 +797,11 @@ input{font-family:inherit;}
       </div>
     </div>
     <div id="adminBanner" class="admin-banner" style="display:none;">
-      관리자 모드 — 방 삭제 · 상점 물품 등록 가능
-      <button id="btnAdminModeOff">종료</button>
+      <span>관리자 모드 — 방 삭제 · 상점 · 계정 관리</span>
+      <span style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" id="btnOpenAccountsAdmin">회원 관리</button>
+        <button type="button" id="btnAdminModeOff">종료</button>
+      </span>
     </div>
     <div class="room-list" id="publicRoomList"></div>
     <div class="hint" id="publicRoomsEmpty">아직 열려 있는 방이 없습니다. 방을 만들어 시작해보세요.</div>
@@ -882,6 +899,37 @@ input{font-family:inherit;}
     <div id="rankList" class="rank-list"></div>
     <div class="hint" id="rankEmpty" style="display:none;margin:12px 0;">아직 등록된 계정이 없습니다.</div>
     <button class="btn btn-primary" id="btnCloseRank" style="margin-top:12px;">닫기</button>
+  </div>
+</div>
+
+<!-- ============ ACCOUNTS ADMIN ============ -->
+<div id="accountsGate">
+  <div class="gate-card" style="width:min(560px,96vw);">
+    <h2>회원 관리</h2>
+    <p style="margin-bottom:8px;">비밀번호는 SHA-256 해시로만 저장되어 <b>평문으로 복원할 수 없습니다</b>. 해시 확인 · 비밀번호 재설정 · 누적 칩 수정이 가능합니다.</p>
+    <div class="acc-admin-list" id="accountsAdminList"></div>
+    <div class="hint" id="accountsAdminEmpty" style="display:none;">가입된 회원이 없습니다.</div>
+    <div class="btn-row" style="margin-top:12px;">
+      <button class="btn btn-ghost" id="btnRefreshAccountsAdmin">새로고침</button>
+      <button class="btn btn-primary" id="btnCloseAccountsAdmin">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ GIFT CHIPS ============ -->
+<div id="giftGate">
+  <div class="gate-card">
+    <h2>🎁 누적 칩 선물</h2>
+    <p id="giftTargetLabel" style="margin-bottom:12px;">플레이어에게 누적 칩을 보냅니다.</p>
+    <p id="giftBalanceHint" style="font-size:12.5px;color:var(--ink);margin:-4px 0 12px;">내 누적 칩: 0</p>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="giftAmountInput">선물할 칩</label>
+      <input id="giftAmountInput" type="number" min="1" step="1" placeholder="보낼 수량">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCloseGift">취소</button>
+      <button class="btn btn-primary" id="btnSubmitGift">선물하기</button>
+    </div>
   </div>
 </div>
 
@@ -1415,8 +1463,82 @@ document.getElementById('adminPwInput').addEventListener('keydown',(e)=>{
 document.getElementById('btnAdminModeOff').onclick=()=>{
   isAdminMode=false;
   document.getElementById('adminBanner').style.display='none';
+  document.getElementById('accountsGate').classList.remove('show');
   renderPublicRooms(lastRoomsSnapshot);
 };
+
+async function renderAccountsAdmin(){
+  if(!isAdminMode){ alert('관리자 모드에서만 이용할 수 있습니다.'); return; }
+  if(!requireReady()) return;
+  const list=document.getElementById('accountsAdminList');
+  const empty=document.getElementById('accountsAdminEmpty');
+  list.innerHTML='';
+  try{
+    const snap=await db.ref('accounts').get();
+    const data=snap.val()||{};
+    const keys=Object.keys(data).sort((a,b)=>String(data[a].nick||a).localeCompare(String(data[b].nick||b),'ko'));
+    if(!keys.length){ empty.style.display='block'; return; }
+    empty.style.display='none';
+    keys.forEach(key=>{
+      const v=data[key]||{};
+      const row=document.createElement('div');
+      row.className='acc-admin-row';
+      row.innerHTML=`
+        <div class="acc-top">
+          <span class="acc-nick"></span>
+          <span style="font-size:11.5px;color:var(--ink);">key: ${escapeHtml(key)}</span>
+        </div>
+        <div class="acc-hash">비밀번호 해시: ${escapeHtml(v.passHash||'(없음)')}</div>
+        <div class="acc-fields">
+          <div class="field">
+            <label>누적 칩</label>
+            <input type="number" class="acc-chips" min="0" step="1">
+          </div>
+          <button type="button" class="btn btn-primary acc-save-chips">칩 저장</button>
+          <div class="field">
+            <label>새 비밀번호</label>
+            <input type="text" class="acc-new-pw" maxlength="32" placeholder="재설정할 비밀번호">
+          </div>
+          <button type="button" class="btn btn-ghost acc-reset-pw">비번 재설정</button>
+        </div>`;
+      row.querySelector('.acc-nick').textContent=v.nick||key;
+      row.querySelector('.acc-chips').value=v.totalChips||0;
+      row.querySelector('.acc-save-chips').onclick=async ()=>{
+        const chips=Math.max(0, Math.floor(Number(row.querySelector('.acc-chips').value)||0));
+        try{
+          await db.ref('accounts/'+key).update({totalChips:chips, updatedAt:Date.now()});
+          if(myAccount && myAccount.key===key){ myAccount.totalChips=chips; refreshAuthUI(); }
+          toast((v.nick||key)+' 누적 칩 → '+fmt(chips));
+        }catch(e){ alert('칩 수정 실패: '+(e.message||e)); }
+      };
+      row.querySelector('.acc-reset-pw').onclick=async ()=>{
+        const pw=(row.querySelector('.acc-new-pw').value||'').trim();
+        if(pw.length<4){ alert('새 비밀번호는 4자 이상이어야 합니다.'); return; }
+        if(!confirm((v.nick||key)+' 비밀번호를 재설정할까요?')) return;
+        try{
+          const passHash=await hashPass(pw);
+          await db.ref('accounts/'+key).update({passHash, updatedAt:Date.now()});
+          row.querySelector('.acc-new-pw').value='';
+          row.querySelector('.acc-hash').textContent='비밀번호 해시: '+passHash;
+          toast((v.nick||key)+' 비밀번호가 재설정되었습니다');
+        }catch(e){ alert('비밀번호 재설정 실패: '+(e.message||e)); }
+      };
+      list.appendChild(row);
+    });
+  }catch(e){
+    empty.style.display='block';
+    empty.textContent='회원 목록을 불러오지 못했습니다. accounts 읽기 권한을 확인해주세요.';
+  }
+}
+document.getElementById('btnOpenAccountsAdmin').onclick=async ()=>{
+  if(!isAdminMode){ alert('관리자 모드에서만 이용할 수 있습니다.'); return; }
+  document.getElementById('accountsGate').classList.add('show');
+  await renderAccountsAdmin();
+};
+document.getElementById('btnCloseAccountsAdmin').onclick=()=>{
+  document.getElementById('accountsGate').classList.remove('show');
+};
+document.getElementById('btnRefreshAccountsAdmin').onclick=()=>renderAccountsAdmin();
 
 function resetTableRenderCache(){
   seatElements={}; commCardsKey='__init__'; heroCardsKey='__init__'; lastLobbyPlayerUids=null;
@@ -2100,12 +2222,23 @@ function renderLobby(room){
     if(p){
       const tag = p.isAI? 'AI' : (p.uid===room.hostUid? '방장':(p.connected?'접속중':'오프라인'));
       row.innerHTML=`<div class="who"><span class="seat-dot"></span>${escapeHtml(p.name)}<span class="tag">${tag}</span></div>`;
+      const actions=document.createElement('div');
+      actions.className='seat-actions';
+      // 로그인된 상대에게 누적 칩 선물 (본인·AI 제외)
+      if(!p.isAI && p.uid!==myUid && p.accountKey){
+        const giftBtn=document.createElement('button');
+        giftBtn.className='gift'; giftBtn.textContent='선물';
+        giftBtn.title='누적 칩 선물';
+        giftBtn.onclick=()=>openGiftModal(p);
+        actions.appendChild(giftBtn);
+      }
       if(isHost && (p.isAI || p.uid!==myUid)){
         const rm=document.createElement('button');
         rm.className='rm'; rm.textContent='내보내기';
         rm.onclick=()=>{ roomRef.child('players/'+p.uid).remove().then(()=>cleanupRoomIfEmpty(roomRef)); };
-        row.appendChild(rm);
+        actions.appendChild(rm);
       }
+      if(actions.childNodes.length) row.appendChild(actions);
     } else {
       row.innerHTML=`<div class="who empty">좌석 ${s+1} · 비어있음</div>`;
     }
@@ -2136,6 +2269,72 @@ document.getElementById('btnAddAI').onclick=async ()=>{
 };
 document.getElementById('btnCopyCode').onclick=()=>{
   navigator.clipboard?.writeText(roomId||'').then(()=>{ toast('코드가 복사되었습니다'); });
+};
+
+let giftTarget=null; // {uid, name, accountKey}
+function openGiftModal(player){
+  if(!myAccount){ alert('로그인해야 누적 칩을 선물할 수 있습니다.'); return; }
+  if(!player||!player.accountKey){ alert('상대가 로그인(고유 닉네임) 상태여야 선물할 수 있습니다.'); return; }
+  if(player.accountKey===myAccount.key){ alert('자신에게는 선물할 수 없습니다.'); return; }
+  giftTarget={uid:player.uid, name:player.name, accountKey:player.accountKey};
+  document.getElementById('giftTargetLabel').textContent=
+    (player.name||'플레이어')+' 님에게 누적 칩을 보냅니다.';
+  document.getElementById('giftBalanceHint').textContent=
+    '내 누적 칩: '+fmt(myAccount.totalChips||0);
+  document.getElementById('giftAmountInput').value='';
+  document.getElementById('giftGate').classList.add('show');
+  setTimeout(()=>document.getElementById('giftAmountInput').focus(),50);
+}
+document.getElementById('btnCloseGift').onclick=()=>{
+  document.getElementById('giftGate').classList.remove('show');
+  giftTarget=null;
+};
+document.getElementById('btnSubmitGift').onclick=async ()=>{
+  if(!giftTarget||!myAccount||!db) return;
+  const amount=Math.floor(Number(document.getElementById('giftAmountInput').value)||0);
+  if(amount<1){ alert('1 이상의 칩을 입력해주세요.'); return; }
+  if((myAccount.totalChips||0)<amount){ alert('누적 칩이 부족합니다.'); return; }
+  if(!confirm(giftTarget.name+' 님에게 누적 칩 '+fmt(amount)+' 을(를) 선물할까요?')) return;
+  const btn=document.getElementById('btnSubmitGift');
+  btn.disabled=true;
+  const fromKey=myAccount.key;
+  const toKey=giftTarget.accountKey;
+  const targetName=giftTarget.name;
+  try{
+    // 보내는 쪽 차감
+    const fromRes=await db.ref('accounts/'+fromKey).transaction(cur=>{
+      if(!cur) return;
+      if((cur.totalChips||0)<amount) return;
+      return {...cur, totalChips:(cur.totalChips||0)-amount, updatedAt:Date.now()};
+    });
+    if(!fromRes.committed){
+      alert('선물 실패: 누적 칩이 부족하거나 계정을 찾을 수 없습니다.');
+      return;
+    }
+    // 받는 쪽 추가
+    const toRes=await db.ref('accounts/'+toKey).transaction(cur=>{
+      if(!cur) return;
+      return {...cur, totalChips:(cur.totalChips||0)+amount, updatedAt:Date.now()};
+    });
+    if(!toRes.committed){
+      // 롤백 시도
+      await db.ref('accounts/'+fromKey).transaction(cur=>{
+        if(!cur) return cur;
+        return {...cur, totalChips:(cur.totalChips||0)+amount, updatedAt:Date.now()};
+      });
+      alert('선물 실패: 상대 계정을 찾을 수 없어 칩을 되돌렸습니다.');
+      return;
+    }
+    myAccount.totalChips=fromRes.snapshot.val().totalChips||0;
+    refreshAuthUI();
+    document.getElementById('giftGate').classList.remove('show');
+    giftTarget=null;
+    toast(targetName+' 님에게 '+fmt(amount)+' 칩을 선물했습니다');
+  }catch(e){
+    alert('선물 중 오류: '+(e.message||e));
+  }finally{
+    btn.disabled=false;
+  }
 };
 document.getElementById('btnLeaveLobby').onclick=()=>{ leaveRoom(); };
 document.getElementById('btnLeaveTable').onclick=()=>{ if(confirm('정말 나가시겠어요?')) leaveRoom(); };
