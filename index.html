@@ -202,12 +202,44 @@ input{font-family:inherit;}
 .admin-banner button{background:none;border:none;color:#e9b3a8;text-decoration:underline;font-size:11.5px;}
 
 /* ---------- Config gate ---------- */
-#configGate,#adminGate{
+#configGate,#adminGate,#privateJoinGate,#loginGate,#shopGate,#rankGate{
   position:fixed;inset:0;z-index:50;
   background:rgba(6,5,4,0.92);
   display:none;align-items:center;justify-content:center;padding:20px;
 }
-#configGate.show,#adminGate.show{display:flex;}
+#configGate.show,#adminGate.show,#privateJoinGate.show,#loginGate.show,#shopGate.show,#rankGate.show{display:flex;}
+.room-row .rcode .lock{margin-right:4px;}
+.lobby-private-hint{
+  display:none;margin-bottom:12px;padding:10px 14px;border-radius:12px;text-align:center;
+  background:rgba(192,90,75,0.12);border:1px solid rgba(192,90,75,0.4);color:#e9b3a8;font-size:12.5px;line-height:1.55;
+}
+.lobby-private-hint.show{display:block;}
+.lobby-private-hint b{color:var(--gold-soft);font-family:'Fraunces',serif;letter-spacing:0.12em;font-size:15px;}
+.shop-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.shop-tabs .btn{flex:1;padding:10px;}
+.shop-item{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;margin-bottom:8px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--line);
+}
+.shop-item .si-info{flex:1;min-width:0;}
+.shop-item .si-name{font-weight:700;color:var(--cream);font-size:14px;}
+.shop-item .si-desc{font-size:11.5px;color:var(--ink);margin-top:3px;line-height:1.4;}
+.shop-item .si-price{font-family:'Fraunces',serif;color:var(--gold-soft);font-weight:700;font-size:14px;flex-shrink:0;}
+.shop-item .btn{width:auto;padding:8px 14px;font-size:12.5px;flex-shrink:0;}
+.shop-admin-box{
+  margin-top:14px;padding:14px;border-radius:12px;border:1px dashed rgba(201,162,75,0.45);
+  background:rgba(201,162,75,0.06);
+}
+.shop-admin-box h3{margin:0 0 10px;font-size:14px;color:var(--gold-soft);font-family:'Fraunces',serif;}
+.rank-list{max-height:min(360px,50vh);overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.rank-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
+  background:rgba(255,255,255,0.04);border:1px solid var(--line);font-size:13px;
+}
+.rank-row .rk{width:28px;font-family:'Fraunces',serif;font-weight:700;color:var(--gold-soft);flex-shrink:0;}
+.rank-row .rn{flex:1;min-width:0;font-weight:600;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rank-row .rc{font-family:'Fraunces',serif;font-weight:700;color:var(--gold-soft);flex-shrink:0;}
+.rank-row.me{border-color:var(--gold);}
 .gate-card{
   width:min(520px,94vw);background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;
   max-height:88vh;overflow:auto;
@@ -718,37 +750,125 @@ input{font-family:inherit;}
     <div class="suits">♠ ♥ ♦ ♣</div>
   </div>
   <div class="landing-card">
+    <div id="authBar" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <div id="authStatus" style="font-size:12.5px;color:var(--ink);min-width:0;flex:1;">게스트로 플레이 중</div>
+      <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
+        <button class="btn btn-ghost" id="btnOpenLogin" style="width:auto;padding:8px 12px;font-size:12.5px;">로그인</button>
+        <button class="btn btn-ghost" id="btnOpenShop" style="width:auto;padding:8px 12px;font-size:12.5px;">🛒 상점</button>
+        <button class="btn btn-ghost" id="btnOpenRank" style="width:auto;padding:8px 12px;font-size:12.5px;">🏆 순위</button>
+      </div>
+    </div>
     <div class="field">
-      <label for="nickInput">닉네임</label>
+      <label for="nickInput">닉네임 <span id="nickHint" style="font-weight:400;opacity:0.75;">(게스트 · 중복 가능)</span></label>
       <input id="nickInput" maxlength="10" placeholder="테이블에서 보일 이름">
     </div>
-    <label class="check-row"><input type="checkbox" id="publicCheck" checked> 만든 방을 아래 목록에 공개하기</label>
+    <label class="check-row" style="cursor:pointer;">
+      <input type="checkbox" id="privateCheck"> 비공개 방 (목록에는 보이지만 입장 시 초대 코드 필요)
+    </label>
     <button class="btn btn-primary" id="btnCreateRoom">방 만들기</button>
-    <div class="divider">또는</div>
-    <div class="field" style="margin-bottom:10px;">
-      <label for="codeInput">초대 코드</label>
-      <input id="codeInput" maxlength="5" placeholder="5자리 코드 입력" style="text-transform:uppercase;letter-spacing:0.14em;">
-    </div>
-    <button class="btn btn-ghost" id="btnJoinRoom">코드로 참가하기</button>
-    <div class="landing-note">
-      실시간 동기화는 Firebase Realtime Database를 사용합니다.<br>
-      처음 실행한다면 <button class="small-btn" id="btnOpenConfig">Firebase 설정 열기</button>
-    </div>
-  </div>
-  <div class="landing-card" style="margin-top:-6px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <label style="font-size:12.5px;color:var(--ink);letter-spacing:0.02em;">방을 선택해서 입장하기</label>
+    <div class="divider">방 목록에서 입장</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <label style="font-size:12.5px;color:var(--ink);letter-spacing:0.02em;">대기 중인 방</label>
       <div style="display:flex;gap:12px;">
         <button class="small-btn" id="btnAdminMode">관리자 모드</button>
         <button class="small-btn" id="btnRefreshRooms">새로고침</button>
       </div>
     </div>
     <div id="adminBanner" class="admin-banner" style="display:none;">
-      관리자 모드 — 모든 방을 볼 수 있고 삭제할 수 있어요.
+      관리자 모드 — 방 삭제 · 상점 물품 등록 가능
       <button id="btnAdminModeOff">종료</button>
     </div>
     <div class="room-list" id="publicRoomList"></div>
     <div class="hint" id="publicRoomsEmpty">아직 열려 있는 방이 없습니다. 방을 만들어 시작해보세요.</div>
+    <div class="landing-note">
+      공개 방은 바로 입장, 비공개 방은 초대 코드가 필요합니다.<br>
+      로그인하면 누적 칩·상점·순위를 이용할 수 있습니다 ·
+      <button class="small-btn" id="btnOpenConfig">Firebase 설정</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PRIVATE JOIN ============ -->
+<div id="privateJoinGate">
+  <div class="gate-card">
+    <h2>🔒 잠긴 방 입장</h2>
+    <p>비공개 방입니다. 방장이 알려준 <b>초대 코드</b>를 입력해주세요.</p>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="privateCodeInput">초대 코드</label>
+      <input id="privateCodeInput" maxlength="5" placeholder="5자리 코드" style="text-transform:uppercase;letter-spacing:0.14em;">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnClosePrivateJoin">닫기</button>
+      <button class="btn btn-primary" id="btnSubmitPrivateJoin">입장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div id="loginGate">
+  <div class="gate-card">
+    <h2>계정 로그인</h2>
+    <p style="margin-bottom:12px;">고유 닉네임으로 가입하면 누적 칩이 저장되고 상점을 이용할 수 있습니다. 테이블 칩은 매 게임 1000으로 시작합니다.</p>
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="btn btn-primary" id="loginTabLogin" style="flex:1;">로그인</button>
+      <button class="btn btn-ghost" id="loginTabRegister" style="flex:1;">회원가입</button>
+    </div>
+    <div class="field">
+      <label for="loginNick">닉네임</label>
+      <input id="loginNick" maxlength="10" placeholder="고유 닉네임">
+    </div>
+    <div class="field" style="margin-bottom:14px;">
+      <label for="loginPw">비밀번호</label>
+      <input id="loginPw" type="password" maxlength="32" placeholder="4자 이상">
+    </div>
+    <p id="loginError" style="display:none;font-size:12.5px;color:#e9b3a8;margin:-4px 0 12px;"></p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="btnCloseLogin">닫기</button>
+      <button class="btn btn-primary" id="btnSubmitLogin">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SHOP ============ -->
+<div id="shopGate">
+  <div class="gate-card" style="width:min(480px,94vw);">
+    <h2>🛒 상점</h2>
+    <p id="shopBalance" style="margin-bottom:12px;">누적 칩: 0 · 로그인 후 구매할 수 있습니다.</p>
+    <div class="shop-tabs">
+      <button class="btn btn-primary" id="shopTabCatalog">상품</button>
+      <button class="btn btn-ghost" id="shopTabOwned">보유 물품</button>
+    </div>
+    <div id="shopCatalogList"></div>
+    <div id="shopOwnedList" style="display:none;"></div>
+    <div class="hint" id="shopEmpty" style="display:none;margin:8px 0;">표시할 항목이 없습니다.</div>
+    <div class="shop-admin-box" id="shopAdminBox" style="display:none;">
+      <h3>관리자 · 상품 등록</h3>
+      <div class="field">
+        <label for="shopNewName">물품 이름</label>
+        <input id="shopNewName" maxlength="24" placeholder="예: 골드 테마 티켓">
+      </div>
+      <div class="field">
+        <label for="shopNewPrice">칩 가격</label>
+        <input id="shopNewPrice" type="number" min="1" step="1" placeholder="예: 500">
+      </div>
+      <div class="field">
+        <label for="shopNewDesc">설명 (선택)</label>
+        <input id="shopNewDesc" maxlength="60" placeholder="짧은 설명">
+      </div>
+      <button class="btn btn-primary" id="btnShopAddItem">상품 추가</button>
+    </div>
+    <button class="btn btn-primary" id="btnCloseShop" style="margin-top:14px;">닫기</button>
+  </div>
+</div>
+
+<!-- ============ RANK ============ -->
+<div id="rankGate">
+  <div class="gate-card">
+    <h2>누적 칩 순위</h2>
+    <p style="margin-bottom:12px;">로그인한 플레이어 기준입니다.</p>
+    <div id="rankList" class="rank-list"></div>
+    <div class="hint" id="rankEmpty" style="display:none;margin:12px 0;">아직 등록된 계정이 없습니다.</div>
+    <button class="btn btn-primary" id="btnCloseRank" style="margin-top:12px;">닫기</button>
   </div>
 </div>
 
@@ -787,7 +907,7 @@ input{font-family:inherit;}
 }'></textarea>
     <p style="margin-top:-4px;">
       Realtime Database 규칙 예시(로그인한 사용자만 읽기/쓰기):<br>
-      <code>{"rules":{"rooms":{"$r":{".read":"auth!=null",".write":"auth!=null"}}}}</code>
+      <code>{"rules":{"rooms":{"$r":{".read":"auth!=null",".write":"auth!=null"}},"accounts":{".read":"auth!=null","$n":{".write":"auth!=null"}},"shop":{".read":"auth!=null",".write":"auth!=null"}}}</code>
     </p>
     <div class="btn-row" style="margin-top:10px;">
       <button class="btn btn-ghost" id="btnCloseGate">닫기</button>
@@ -805,11 +925,14 @@ input{font-family:inherit;}
       </div>
       <div class="room-code" id="roomCodeDisplay">-----</div>
     </div>
+    <div class="lobby-private-hint" id="lobbyPrivateHint">
+      🔒 비공개 방 · 친구에게 초대 코드 <b id="lobbyInviteCode">-----</b> 를 알려주세요
+    </div>
     <div class="seat-list" id="seatList"></div>
     <div class="lobby-actions">
       <div class="btn-row">
         <button class="btn btn-ghost" id="btnAddAI">AI 플레이어 추가</button>
-        <button class="btn btn-ghost" id="btnCopyCode">코드 복사</button>
+        <button class="btn btn-ghost" id="btnCopyCode">초대 코드 복사</button>
       </div>
       <button class="btn btn-primary" id="btnStartGame">게임 시작</button>
       <button class="btn btn-ghost" id="btnLeaveLobby">나가기</button>
@@ -1144,6 +1267,12 @@ let roomId=null, roomRef=null, unsubRoom=null;
 let latestRoom=null;
 let myName='플레이어';
 let isHost=false;
+let myAccount=null; // {key,nick,totalChips,inventory}
+let loginMode='login';
+let shopTab='catalog';
+let pendingPrivateRoomId=null;
+const STARTING_TABLE_CHIPS=1000;
+const ACCOUNT_LS_KEY='holdem_account_v1';
 let heartbeatTimer=null, turnTimerInterval=null, aiTimer=null, autoAdvanceTimer=null;
 const SHOWDOWN_CHOICE_WINDOW_MS=5000; // 공개/비공개를 선택할 수 있는 시간(5초) — 이 동안은 아직 다른 사람에게 보이지 않는다
 const SHOWDOWN_HIGHLIGHT_MS=5000; // 선택 시간이 끝난 뒤, 그 선택에 따라 카드가 보이거나 안 보이는 시간(5초)
@@ -1185,13 +1314,14 @@ function renderPublicRooms(all){
   const statusNames={lobby:'대기중',playing:'진행중',ended:'종료됨'};
   let entries=Object.entries(all);
   if(!isAdminMode){
-    entries=entries.filter(([id,r])=>r && r.status==='lobby' && r.isPublic!==false);
+    // 공개·비공개 모두 목록에 표시 (기본은 공개 생성, 비공개도 목록에 뜸)
+    entries=entries.filter(([id,r])=>r && r.status==='lobby');
   } else {
     entries=entries.filter(([id,r])=>!!r);
   }
   const rooms=entries
     .sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0))
-    .slice(0,isAdminMode?60:15);
+    .slice(0,isAdminMode?60:20);
 
   if(rooms.length===0){ emptyHint.style.display='block'; return; }
   emptyHint.style.display='none';
@@ -1201,22 +1331,30 @@ function renderPublicRooms(all){
     const max=r.maxPlayers||8;
     const hostP=Object.values(players).find(p=>p.seat===0) || Object.values(players)[0];
     const full=count>=max;
+    const isPrivate=r.isPublic===false;
     const row=document.createElement('div');
     row.className='room-row';
-    const statusLabel=isAdminMode? ' · '+(statusNames[r.status]||r.status||'-')+(r.isPublic===false?' · 비공개':'') : '';
+    const statusLabel=isAdminMode? ' · '+(statusNames[r.status]||r.status||'-') : '';
+    const privacyLabel=isPrivate? ' · 🔒 비공개' : ' · 공개';
+    const titleHtml=isPrivate ? `<span class="lock">🔒</span>잠긴 방` : escapeHtml(id);
     row.innerHTML=`
       <div class="rinfo">
-        <div class="rcode">${escapeHtml(id)}</div>
-        <div class="rmeta">${hostP?escapeHtml(hostP.name)+' 님의 방 · ':''}${count}/${max}명 · 블라인드 ${r.blinds?r.blinds.sb+'/'+r.blinds.bb:'-'}${statusLabel}</div>
+        <div class="rcode">${titleHtml}</div>
+        <div class="rmeta">${hostP?escapeHtml(hostP.name)+' 님의 방 · ':''}${count}/${max}명 · 블라인드 ${r.blinds?r.blinds.sb+'/'+r.blinds.bb:'-'}${privacyLabel}${statusLabel}</div>
       </div>
       <div class="rrow-actions"></div>`;
     const actions=row.querySelector('.rrow-actions');
     if(!isAdminMode || r.status==='lobby'){
       const joinBtn=document.createElement('button');
       joinBtn.className='btn-mini';
-      joinBtn.textContent=full?'가득 참':'입장';
-      if(full) joinBtn.disabled=true;
-      else joinBtn.onclick=()=>joinRoomByCode(id);
+      if(full){ joinBtn.textContent='가득 참'; joinBtn.disabled=true; }
+      else if(isPrivate){
+        joinBtn.textContent='입장';
+        joinBtn.onclick=()=>openPrivateJoinModal(id);
+      } else {
+        joinBtn.textContent='입장';
+        joinBtn.onclick=()=>joinRoomByCode(id);
+      }
       actions.appendChild(joinBtn);
     }
     if(isAdminMode){
@@ -1253,6 +1391,7 @@ document.getElementById('btnSubmitAdminPw').onclick=()=>{
     document.getElementById('adminGate').classList.remove('show');
     document.getElementById('adminBanner').style.display='flex';
     renderPublicRooms(lastRoomsSnapshot);
+    toast('관리자 모드 활성화 · 상점에서 상품을 등록할 수 있습니다');
   } else {
     alert('비밀번호가 올바르지 않습니다.');
   }
@@ -1311,6 +1450,9 @@ const DEFAULT_FIREBASE_CONFIG={
   const cfg=saved||DEFAULT_FIREBASE_CONFIG;
   document.getElementById('cfgInput').value=JSON.stringify(cfg,null,2);
   initFirebase(cfg);
+  const tryRestore=()=>{ if(db) restoreAccountSession(); else setTimeout(tryRestore,400); };
+  setTimeout(tryRestore,500);
+  refreshAuthUI();
 })();
 
 document.getElementById('btnOpenConfig').onclick=()=>{
@@ -1334,12 +1476,309 @@ document.getElementById('btnSaveGate').onclick=()=>{
   }
 };
 
+/* ---------------- 계정 / 로그인 / 누적 칩 ---------------- */
+function nickKey(nick){ return String(nick||'').trim().toLowerCase().replace(/\s+/g,'_').slice(0,24); }
+async function hashPass(pw){
+  const data=new TextEncoder().encode('midnight-holdem|'+pw);
+  const buf=await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function saveAccountLocal(acc){
+  try{
+    if(acc) localStorage.setItem(ACCOUNT_LS_KEY, JSON.stringify({key:acc.key, nick:acc.nick}));
+    else localStorage.removeItem(ACCOUNT_LS_KEY);
+  }catch(e){}
+}
+function loadAccountLocal(){ try{ return JSON.parse(localStorage.getItem(ACCOUNT_LS_KEY)||'null'); }catch(e){ return null; } }
+function refreshAuthUI(){
+  const status=document.getElementById('authStatus');
+  const btn=document.getElementById('btnOpenLogin');
+  const nickInput=document.getElementById('nickInput');
+  const nickHint=document.getElementById('nickHint');
+  if(!status||!btn) return;
+  if(myAccount){
+    status.innerHTML='로그인: <b style="color:var(--gold-soft)">'+escapeHtml(myAccount.nick)+'</b> · 누적 <b style="color:var(--gold-soft)">'+fmt(myAccount.totalChips||0)+'</b>';
+    btn.textContent='로그아웃';
+    if(nickInput){ nickInput.value=myAccount.nick; nickInput.readOnly=true; nickInput.style.opacity='0.75'; }
+    if(nickHint) nickHint.textContent='(고유 닉네임 · 로그인됨)';
+  } else {
+    status.textContent='게스트로 플레이 중';
+    btn.textContent='로그인';
+    if(nickInput){ nickInput.readOnly=false; nickInput.style.opacity=''; }
+    if(nickHint) nickHint.textContent='(게스트 · 중복 가능)';
+  }
+}
+async function restoreAccountSession(){
+  const saved=loadAccountLocal();
+  if(!saved||!saved.key||!db){ myAccount=null; refreshAuthUI(); return; }
+  try{
+    const snap=await db.ref('accounts/'+saved.key).get();
+    if(!snap.exists()){ saveAccountLocal(null); myAccount=null; refreshAuthUI(); return; }
+    const v=snap.val();
+    myAccount={key:saved.key, nick:v.nick||saved.nick, totalChips:v.totalChips||0, inventory:v.inventory||{}};
+    myName=myAccount.nick;
+    refreshAuthUI();
+  }catch(e){ myAccount=null; refreshAuthUI(); }
+}
+function setLoginMode(mode){
+  loginMode=mode;
+  const a=document.getElementById('loginTabLogin'), b=document.getElementById('loginTabRegister');
+  if(mode==='register'){ b.className='btn btn-primary'; a.className='btn btn-ghost'; document.getElementById('btnSubmitLogin').textContent='가입하기'; }
+  else { a.className='btn btn-primary'; b.className='btn btn-ghost'; document.getElementById('btnSubmitLogin').textContent='로그인'; }
+  document.getElementById('loginError').style.display='none';
+}
+document.getElementById('btnOpenLogin').onclick=()=>{
+  if(myAccount){ myAccount=null; saveAccountLocal(null); refreshAuthUI(); toast('로그아웃했습니다'); return; }
+  setLoginMode('login');
+  document.getElementById('loginNick').value='';
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginError').style.display='none';
+  document.getElementById('loginGate').classList.add('show');
+};
+document.getElementById('btnCloseLogin').onclick=()=>document.getElementById('loginGate').classList.remove('show');
+document.getElementById('loginTabLogin').onclick=()=>setLoginMode('login');
+document.getElementById('loginTabRegister').onclick=()=>setLoginMode('register');
+document.getElementById('btnSubmitLogin').onclick=async ()=>{
+  if(!requireReady()) return;
+  const nick=(document.getElementById('loginNick').value||'').trim().slice(0,10);
+  const pw=document.getElementById('loginPw').value||'';
+  const err=document.getElementById('loginError');
+  if(nick.length<2){ err.textContent='닉네임은 2자 이상'; err.style.display='block'; return; }
+  if(pw.length<4){ err.textContent='비밀번호는 4자 이상'; err.style.display='block'; return; }
+  const key=nickKey(nick);
+  const btn=document.getElementById('btnSubmitLogin');
+  btn.disabled=true;
+  try{
+    const ref=db.ref('accounts/'+key);
+    const snap=await ref.get();
+    const passHash=await hashPass(pw);
+    if(loginMode==='register'){
+      if(snap.exists()){ err.textContent='이미 사용 중인 닉네임입니다.'; err.style.display='block'; return; }
+      await ref.set({nick, passHash, totalChips:0, gamesPlayed:0, inventory:{}, createdAt:Date.now(), updatedAt:Date.now()});
+      myAccount={key, nick, totalChips:0, inventory:{}};
+    } else {
+      if(!snap.exists()){ err.textContent='존재하지 않는 닉네임입니다.'; err.style.display='block'; return; }
+      const v=snap.val();
+      if(v.passHash!==passHash){ err.textContent='비밀번호가 올바르지 않습니다.'; err.style.display='block'; return; }
+      myAccount={key, nick:v.nick||nick, totalChips:v.totalChips||0, inventory:v.inventory||{}};
+    }
+    saveAccountLocal(myAccount); myName=myAccount.nick; refreshAuthUI();
+    document.getElementById('loginGate').classList.remove('show');
+    toast(myAccount.nick+'님, 환영합니다');
+  }catch(e){ err.textContent='실패: '+(e.message||e); err.style.display='block'; }
+  finally{ btn.disabled=false; }
+};
+
+/* ---------------- 순위 ---------------- */
+document.getElementById('btnOpenRank').onclick=async ()=>{
+  if(!requireReady()) return;
+  document.getElementById('rankGate').classList.add('show');
+  const list=document.getElementById('rankList'), empty=document.getElementById('rankEmpty');
+  list.innerHTML='';
+  try{
+    const snap=await db.ref('accounts').get();
+    const data=snap.val()||{};
+    const rows=Object.keys(data).map(k=>({key:k, nick:data[k].nick||k, totalChips:data[k].totalChips||0}))
+      .sort((a,b)=>b.totalChips-a.totalChips || a.nick.localeCompare(b.nick,'ko'));
+    if(!rows.length){ empty.style.display='block'; empty.textContent='아직 등록된 계정이 없습니다.'; return; }
+    empty.style.display='none';
+    rows.forEach((r,i)=>{
+      const row=document.createElement('div');
+      row.className='rank-row'+(myAccount&&myAccount.key===r.key?' me':'');
+      row.innerHTML='<span class="rk">'+(i+1)+'</span><span class="rn"></span><span class="rc"></span>';
+      row.querySelector('.rn').textContent=r.nick;
+      row.querySelector('.rc').textContent=fmt(r.totalChips);
+      list.appendChild(row);
+    });
+  }catch(e){ empty.style.display='block'; empty.textContent='순위를 불러오지 못했습니다.'; }
+};
+document.getElementById('btnCloseRank').onclick=()=>document.getElementById('rankGate').classList.remove('show');
+
+/* ---------------- 상점 ---------------- */
+document.getElementById('btnOpenShop').onclick=async ()=>{
+  if(!requireReady()) return;
+  shopTab='catalog';
+  document.getElementById('shopTabCatalog').className='btn btn-primary';
+  document.getElementById('shopTabOwned').className='btn btn-ghost';
+  document.getElementById('shopCatalogList').style.display='';
+  document.getElementById('shopOwnedList').style.display='none';
+  document.getElementById('shopAdminBox').style.display=isAdminMode?'block':'none';
+  document.getElementById('shopGate').classList.add('show');
+  await renderShop();
+};
+document.getElementById('btnCloseShop').onclick=()=>document.getElementById('shopGate').classList.remove('show');
+document.getElementById('shopTabCatalog').onclick=()=>{
+  shopTab='catalog';
+  document.getElementById('shopTabCatalog').className='btn btn-primary';
+  document.getElementById('shopTabOwned').className='btn btn-ghost';
+  document.getElementById('shopCatalogList').style.display='';
+  document.getElementById('shopOwnedList').style.display='none';
+  renderShop();
+};
+document.getElementById('shopTabOwned').onclick=()=>{
+  shopTab='owned';
+  document.getElementById('shopTabOwned').className='btn btn-primary';
+  document.getElementById('shopTabCatalog').className='btn btn-ghost';
+  document.getElementById('shopCatalogList').style.display='none';
+  document.getElementById('shopOwnedList').style.display='';
+  renderShop();
+};
+async function renderShop(){
+  const bal=document.getElementById('shopBalance');
+  const empty=document.getElementById('shopEmpty');
+  const catalogEl=document.getElementById('shopCatalogList');
+  const ownedEl=document.getElementById('shopOwnedList');
+  if(myAccount) bal.textContent='누적 칩: '+fmt(myAccount.totalChips||0)+' · '+myAccount.nick;
+  else bal.textContent='누적 칩: — · 로그인 후 구매할 수 있습니다.';
+  document.getElementById('shopAdminBox').style.display=isAdminMode?'block':'none';
+  empty.style.display='none';
+  try{
+    const snap=await db.ref('shop/items').get();
+    const items=snap.val()||{};
+    const inv=(myAccount && myAccount.inventory)||{};
+    if(shopTab==='catalog'){
+      catalogEl.innerHTML='';
+      const ids=Object.keys(items).sort((a,b)=>(items[b].createdAt||0)-(items[a].createdAt||0));
+      if(!ids.length){ empty.style.display='block'; empty.textContent='등록된 상품이 없습니다.'; return; }
+      ids.forEach(id=>{
+        const it=items[id];
+        const row=document.createElement('div'); row.className='shop-item';
+        row.innerHTML='<div class="si-info"><div class="si-name"></div><div class="si-desc"></div></div><div class="si-price"></div>';
+        row.querySelector('.si-name').textContent=it.name||'상품';
+        row.querySelector('.si-desc').textContent=it.desc||'';
+        row.querySelector('.si-price').textContent=fmt(it.price||0)+' 칩';
+        if(isAdminMode){
+          const del=document.createElement('button'); del.className='btn btn-ghost'; del.textContent='삭제';
+          del.onclick=async ()=>{
+            if(!confirm('이 상품을 삭제할까요?')) return;
+            await db.ref('shop/items/'+id).remove();
+            renderShop();
+          };
+          row.appendChild(del);
+        }
+        const buy=document.createElement('button'); buy.className='btn btn-primary'; buy.textContent='구매';
+        buy.onclick=()=>buyShopItem(id, it);
+        row.appendChild(buy);
+        catalogEl.appendChild(row);
+      });
+    } else {
+      ownedEl.innerHTML='';
+      const ownedIds=Object.keys(inv).filter(id=>inv[id]);
+      if(!myAccount){ empty.style.display='block'; empty.textContent='로그인하면 보유 물품을 볼 수 있습니다.'; return; }
+      if(!ownedIds.length){ empty.style.display='block'; empty.textContent='보유한 물품이 없습니다.'; return; }
+      ownedIds.forEach(id=>{
+        const it=items[id]||{name:id, desc:'(삭제된 상품일 수 있음)', price:0};
+        const row=document.createElement('div'); row.className='shop-item';
+        row.innerHTML='<div class="si-info"><div class="si-name"></div><div class="si-desc"></div></div><div class="si-price">보유 '+(inv[id]===true?1:inv[id])+'</div>';
+        row.querySelector('.si-name').textContent=it.name||id;
+        row.querySelector('.si-desc').textContent=it.desc||'';
+        ownedEl.appendChild(row);
+      });
+    }
+  }catch(e){
+    empty.style.display='block'; empty.textContent='상점을 불러오지 못했습니다. Firebase shop 규칙을 확인해주세요.';
+  }
+}
+async function buyShopItem(id, it){
+  if(!myAccount){ alert('로그인 후 구매할 수 있습니다.'); return; }
+  const price=Math.max(0, Math.floor(Number(it.price)||0));
+  if((myAccount.totalChips||0)<price){ alert('누적 칩이 부족합니다.'); return; }
+  if(!confirm((it.name||'상품')+' 을(를) '+fmt(price)+' 칩에 구매할까요?')) return;
+  try{
+    const ref=db.ref('accounts/'+myAccount.key);
+    const result=await ref.transaction(cur=>{
+      if(!cur) return;
+      if((cur.totalChips||0)<price) return;
+      const next={...cur, inventory:{...(cur.inventory||{})}};
+      next.totalChips=(cur.totalChips||0)-price;
+      next.inventory[id]=(next.inventory[id]===true?1: (next.inventory[id]||0))+1;
+      next.updatedAt=Date.now();
+      return next;
+    });
+    if(!result.committed){ alert('구매에 실패했습니다. 칩이 부족하거나 계정을 찾을 수 없습니다.'); return; }
+    const v=result.snapshot.val();
+    myAccount.totalChips=v.totalChips||0;
+    myAccount.inventory=v.inventory||{};
+    refreshAuthUI();
+    toast((it.name||'상품')+' 구매 완료!');
+    renderShop();
+  }catch(e){ alert('구매 실패: '+(e.message||e)); }
+}
+document.getElementById('btnShopAddItem').onclick=async ()=>{
+  if(!isAdminMode){ alert('관리자만 상품을 등록할 수 있습니다.'); return; }
+  if(!requireReady()) return;
+  const name=(document.getElementById('shopNewName').value||'').trim().slice(0,24);
+  const price=Math.floor(Number(document.getElementById('shopNewPrice').value)||0);
+  const desc=(document.getElementById('shopNewDesc').value||'').trim().slice(0,60);
+  if(!name){ alert('물품 이름을 입력해주세요.'); return; }
+  if(price<1){ alert('가격은 1 이상이어야 합니다.'); return; }
+  const id='item_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  await db.ref('shop/items/'+id).set({name, price, desc, createdAt:Date.now()});
+  document.getElementById('shopNewName').value='';
+  document.getElementById('shopNewPrice').value='';
+  document.getElementById('shopNewDesc').value='';
+  toast('상품이 등록되었습니다');
+  renderShop();
+};
+
+async function applyCareerChips(room){
+  if(!db) return;
+  const players=room.players||{};
+  const tasks=[];
+  Object.keys(players).forEach(uid=>{
+    const p=players[uid];
+    if(!p||p.isAI||!p.accountKey) return;
+    const delta=Math.max(0,p.chips||0)-STARTING_TABLE_CHIPS;
+    tasks.push(db.ref('accounts/'+p.accountKey).transaction(cur=>{
+      if(!cur) return cur;
+      return {...cur, totalChips:Math.max(0,(cur.totalChips||0)+delta), gamesPlayed:(cur.gamesPlayed||0)+1, updatedAt:Date.now()};
+    }).then(()=>{
+      if(myAccount&&myAccount.key===p.accountKey){
+        myAccount.totalChips=Math.max(0,(myAccount.totalChips||0)+delta);
+        refreshAuthUI();
+      }
+    }).catch(()=>{}));
+  });
+  await Promise.all(tasks);
+}
+
+function currentPlayerPayload(seat){
+  return {
+    name:myName, seat, chips:STARTING_TABLE_CHIPS, isAI:false, connected:true, folded:false, allIn:false,
+    currentBet:0, totalBet:0, hasActed:false, busted:false, cards:null, uidJoinedAt:Date.now(),
+    accountKey: myAccount? myAccount.key:null
+  };
+}
+
+/* ---------------- 잠긴 방 입장 (기본은 공개, 비공개 체크 시에만 코드 필요) ---------------- */
+function openPrivateJoinModal(rid){
+  pendingPrivateRoomId=rid||null;
+  document.getElementById('privateCodeInput').value='';
+  document.getElementById('privateJoinGate').classList.add('show');
+  setTimeout(()=>document.getElementById('privateCodeInput').focus(),50);
+}
+document.getElementById('btnClosePrivateJoin').onclick=()=>{
+  document.getElementById('privateJoinGate').classList.remove('show');
+  pendingPrivateRoomId=null;
+};
+document.getElementById('btnSubmitPrivateJoin').onclick=async ()=>{
+  const code=(document.getElementById('privateCodeInput').value||'').trim().toUpperCase();
+  if(code.length<4){ alert('초대 코드를 입력해주세요.'); return; }
+  if(pendingPrivateRoomId && code!==pendingPrivateRoomId){ alert('초대 코드가 이 방과 일치하지 않습니다.'); return; }
+  document.getElementById('privateJoinGate').classList.remove('show');
+  const target=pendingPrivateRoomId||code;
+  pendingPrivateRoomId=null;
+  await joinRoomByCode(target);
+};
+
 /* ---------------- 랜딩: 방 생성 / 참가 ---------------- */
 document.getElementById('btnCreateRoom').onclick=async ()=>{
   if(!requireReady()) return;
-  myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+  if(myAccount) myName=myAccount.nick;
+  else myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
   const id=roomCode();
   const seat=0;
+  const makePrivate=document.getElementById('privateCheck').checked;
   const initial={
     createdAt: Date.now(),
     hostUid: myUid,
@@ -1349,11 +1788,8 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
     dealerSeat: -1,
     handCount: 0,
     blinds: {sb:10,bb:20},
-    isPublic: document.getElementById('publicCheck').checked,
-    players: {
-      [myUid]: {name:myName, seat:seat, chips:1000, isAI:false, connected:true, folded:false, allIn:false,
-                 currentBet:0, totalBet:0, hasActed:false, busted:false, cards:null, uidJoinedAt:Date.now()}
-    },
+    isPublic: !makePrivate,
+    players: { [myUid]: currentPlayerPayload(seat) },
     game: {stage:'lobby', community:[], pot:0, currentBet:0, minRaise:20, turnSeat:-1, turnStartedAt:0, lastAction:null, pots:[], results:null}
   };
   roomId=id;
@@ -1367,15 +1803,10 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
   showScreen('screen-lobby');
 };
 
-document.getElementById('btnJoinRoom').onclick=async ()=>{
-  const code=(document.getElementById('codeInput').value||'').trim().toUpperCase();
-  if(code.length<4){ alert('초대 코드를 입력해주세요.'); return; }
-  await joinRoomByCode(code);
-};
-
 async function joinRoomByCode(code){
   if(!requireReady()) return;
-  myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
+  if(myAccount) myName=myAccount.nick;
+  else myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
   const ref=db.ref('rooms/'+code);
   const snap=await ref.get();
   if(!snap.exists()){ alert('존재하지 않는 방 코드입니다.'); return; }
@@ -1388,10 +1819,7 @@ async function joinRoomByCode(code){
     for(let s=0;s<(room.maxPlayers||8);s++){ if(!occupied.includes(s)){ freeSeat=s; break; } }
     if(freeSeat===-1){ alert('방이 가득 찼습니다.'); return; }
     if(room.status!=='lobby'){ alert('이미 게임이 진행 중인 방입니다. 잠시 후 다시 시도해주세요.'); return; }
-    await ref.child('players/'+myUid).set({
-      name:myName, seat:freeSeat, chips:1000, isAI:false, connected:true, folded:false, allIn:false,
-      currentBet:0, totalBet:0, hasActed:false, busted:false, cards:null, uidJoinedAt:Date.now()
-    });
+    await ref.child('players/'+myUid).set(currentPlayerPayload(freeSeat));
   }
   roomId=code;
   roomRef=ref;
@@ -1524,6 +1952,12 @@ function maybeHandleFailover(room){
 /* ---------------- 로비 렌더 ---------------- */
 function renderLobby(room){
   document.getElementById('roomCodeDisplay').textContent=roomId||'-----';
+  const privHint=document.getElementById('lobbyPrivateHint');
+  const inviteEl=document.getElementById('lobbyInviteCode');
+  if(room.isPublic===false){
+    if(privHint) privHint.classList.add('show');
+    if(inviteEl) inviteEl.textContent=roomId||'-----';
+  } else if(privHint) privHint.classList.remove('show');
   const list=document.getElementById('seatList');
   list.innerHTML='';
   const players=room.players||{};
@@ -1944,9 +2378,13 @@ async function goToShowdown(room,contenders){
 }
 
 async function endGame(room){
+  if(!room.careerApplied){
+    try{ await applyCareerChips(room); }catch(e){ console.warn(e); }
+  }
   const remaining=occupiedSeats(room).filter(p=>!p.busted && p.chips>0);
   await roomRef.update({
     status:'ended',
+    careerApplied:true,
     'game/stage':'ended',
     'game/results': remaining.length? [{uid:remaining[0].uid,name:remaining[0].name,amount:0,hand:'최종 우승'}] : []
   });
@@ -2908,9 +3346,9 @@ function showShowdown(results){
 document.getElementById('btnBackLobby').onclick=async ()=>{
   const room=latestRoom;
   if(isHost && room){
-    const updates={status:'lobby','game/stage':'lobby','game/community':[],'game/pot':0,'game/results':null,'dealerSeat':-1,handCount:0};
+    const updates={status:'lobby','game/stage':'lobby','game/community':[],'game/pot':0,'game/results':null,'dealerSeat':-1,handCount:0,careerApplied:null};
     Object.keys(room.players||{}).forEach(u=>{
-      updates['players/'+u+'/chips']=1000;
+      updates['players/'+u+'/chips']=STARTING_TABLE_CHIPS;
       updates['players/'+u+'/busted']=false;
       updates['players/'+u+'/cards']=null;
       updates['players/'+u+'/folded']=false;
