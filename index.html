@@ -386,6 +386,16 @@ input{font-family:inherit;}
   color:var(--ink);font-weight:500;letter-spacing:0.03em;
 }
 .seat.empty .seat-name::before,.seat.empty .seat-name::after{content:'♠';color:var(--gold);opacity:0.6;font-size:11px;}
+.seat.giveable .seat-card{cursor:pointer;transition:border-color .15s ease,box-shadow .15s ease;}
+.seat.giveable .seat-card:active{transform:scale(0.97);}
+.seat.giveable:hover .seat-card{border-color:var(--gold);box-shadow:0 0 0 1px rgba(201,162,75,0.3);}
+.give-chip-hint{
+  position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+  font-size:9.5px;font-weight:700;letter-spacing:0.02em;color:#241a08;
+  background:linear-gradient(180deg,var(--gold-soft),var(--gold));
+  border-radius:20px;padding:2px 9px;white-space:nowrap;display:none;pointer-events:none;
+}
+.seat.giveable:hover .give-chip-hint{display:block;}
 .seat-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .seat-name .bot{color:var(--gold-soft);font-size:10px;margin-left:3px;}
 .seat.hero .seat-name{color:var(--gold-soft);}
@@ -402,9 +412,53 @@ input{font-family:inherit;}
 .seat-status.st-fold{background:rgba(192,90,75,0.18);color:#e9b3a8;border:1px solid rgba(192,90,75,0.5);}
 .seat-status.st-check{background:rgba(255,255,255,0.1);color:var(--cream);border:1px solid var(--line);}
 .seat-status.st-allin{background:linear-gradient(180deg,#c05a4b,#8f382b);color:#fff2ee;border:1px solid rgba(255,255,255,0.25);}
-.seat-cards{display:flex;gap:4px;justify-content:center;margin-top:6px;}
-.seat-cards .card{width:32px;height:45px;font-size:13px;border-radius:5px;font-weight:700;}
+.seat-cards{display:flex;gap:5px;justify-content:center;margin-top:6px;overflow:visible;}
+.seat-cards .card{width:42px;height:58px;font-size:16px;border-radius:6px;font-weight:700;}
 .seat.hero .seat-cards .card{box-shadow:0 0 0 1px var(--gold-soft),0 3px 10px rgba(0,0,0,0.45);}
+.seat-cards-wrap{position:relative;display:flex;justify-content:center;}
+/* 쇼다운 공개 시간(5초) — 카드 확대 + 네온 옐로우 테두리로 가시성 극대화, 은은한 펄스로 시선을 끈다 */
+.seat-cards.reveal-highlight{overflow:visible;z-index:6;gap:22px;}
+.seat-cards.reveal-highlight .card{
+  transform:scale(1.4);
+  border:2px solid #1a1408;
+  box-shadow:
+    0 0 0 3px #ffcf33,
+    0 0 0 4.5px rgba(26,20,8,0.9),
+    0 0 18px 3px rgba(255,207,51,0.85),
+    0 0 40px 10px rgba(255,207,51,0.4),
+    0 12px 28px rgba(0,0,0,0.6);
+  transition:transform .3s ease;
+  animation:revealNeonPulse 1.2s ease-in-out infinite;
+}
+@keyframes revealNeonPulse{
+  0%,100%{
+    box-shadow:
+      0 0 0 3px #ffcf33,
+      0 0 0 4.5px rgba(26,20,8,0.9),
+      0 0 18px 3px rgba(255,207,51,0.85),
+      0 0 40px 10px rgba(255,207,51,0.4),
+      0 12px 28px rgba(0,0,0,0.6);
+  }
+  50%{
+    box-shadow:
+      0 0 0 3px #fff3a3,
+      0 0 0 4.5px rgba(26,20,8,0.9),
+      0 0 26px 6px rgba(255,243,163,0.95),
+      0 0 54px 16px rgba(255,207,51,0.55),
+      0 12px 28px rgba(0,0,0,0.6);
+  }
+}
+/* 쇼다운 공개 카드 위, 남은 시간을 보여주는 동그란 타이머 배지 */
+.reveal-timer-badge{
+  position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  min-width:24px;height:24px;padding:0 5px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:800;font-size:12.5px;color:#241a08;
+  background:radial-gradient(circle at 32% 28%,#fff6cf,#ffcf33 58%,#c9950a 100%);
+  box-shadow:0 0 0 2px #1a1408,0 0 10px 3px rgba(255,207,51,0.75);
+  z-index:8;
+}
+.reveal-timer-badge.show{display:flex;}
 .dealer-btn{
   position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
   background:var(--gold-soft);color:#241a08;font-size:10px;font-weight:700;
@@ -445,10 +499,15 @@ input{font-family:inherit;}
 
 .hero-bar{
   position:absolute;left:0;right:0;bottom:0;z-index:8;
-  display:flex;flex-direction:column;align-items:center;gap:10px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
   padding:10px 12px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);
+  /* 이 바가 화면 하단 전체를 가상의 사각형으로 덮고 있어서, 근처(특히 내 바로
+     양옆) 좌석이 이 밑에 깔려 탭이 씹히던 문제가 있었다. 바 자체는 클릭을
+     통과시키고, 실제 버튼이 있는 자식 요소들만 클릭을 받도록 분리한다. */
+  pointer-events:none;
 }
+.hero-bar>*{pointer-events:auto;}
 .hero-turn-timer{
   font-family:'Fraunces',serif;font-weight:700;font-size:13px;color:var(--gold-soft);
   background:rgba(0,0,0,0.5);border:1px solid rgba(201,162,75,0.5);
@@ -463,13 +522,24 @@ input{font-family:inherit;}
   border-radius:20px;padding:5px 16px;letter-spacing:0.02em;
   box-shadow:0 4px 14px rgba(0,0,0,0.4);
 }
-.hero-hand{display:flex;gap:10px;}
+/* 내 카드 + 액션 버튼을 하나의 박스로 묶어 가시성 확보 */
+.hero-action-box{
+  width:min(560px,96vw);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  background:rgba(12,10,8,0.92);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px 12px 12px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(233,214,166,0.06);
+  backdrop-filter:blur(6px);
+}
+.hero-hand{display:flex;gap:10px;justify-content:center;}
 .hero-hand .card{
   width:60px;height:84px;font-size:23px;
   border:2px solid var(--gold-soft);
   box-shadow:0 6px 18px rgba(0,0,0,0.5),0 0 0 1px rgba(201,162,75,0.25);
 }
-.action-row{display:flex;gap:8px;width:min(560px,96vw);align-items:center;}
+.action-row{display:flex;gap:8px;width:100%;align-items:center;}
 .action-row .btn{padding:12px 8px;font-size:13px;border-radius:12px;}
 .act-fold{background:rgba(192,90,75,0.16);border:1px solid rgba(192,90,75,0.5);color:#e9b3a8;}
 .act-check{background:rgba(255,255,255,0.08);border:1px solid var(--line);color:var(--cream);}
@@ -477,8 +547,8 @@ input{font-family:inherit;}
 .act-raise{background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#241a08;border:1px solid transparent;}
 .act-allin{background:linear-gradient(180deg,#c05a4b,#8f382b);color:#fbe6e0;border:1px solid transparent;}
 .raise-panel{
-  display:none;width:min(560px,96vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  padding:10px 14px;gap:10px;flex-direction:column;
+  display:none;width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--line);border-radius:12px;
+  padding:10px 12px;gap:10px;flex-direction:column;
 }
 .raise-panel.show{display:flex;}
 .raise-panel input[type=range]{width:100%;accent-color:var(--gold);}
@@ -513,6 +583,45 @@ input{font-family:inherit;}
 }
 .overlay-card h2{font-family:'Fraunces',serif;color:var(--gold-soft);margin:0 0 10px;font-size:24px;}
 .overlay-card p{color:var(--ink);font-size:13.5px;line-height:1.7;margin-bottom:16px;}
+/* 쇼다운 결과 카드 — 족보/기록과 같은 플로팅 모달 */
+.showdown-card{
+  width:min(360px,90vw);max-height:80vh;overflow-y:auto;text-align:center;
+  box-shadow:0 24px 60px var(--shadow);
+}
+.showdown-card #sdBody{text-align:left;margin-bottom:12px;}
+.sd-hide-section{
+  margin:4px 0 12px;padding:12px 12px 10px;
+  background:rgba(192,90,75,0.12);border:1px solid rgba(192,90,75,0.4);border-radius:12px;
+}
+.sd-hide-section.is-disabled{opacity:0.45;pointer-events:none;}
+.sd-hide-section .sd-hide-msg{
+  font-size:12.5px;color:#e9b3a8;line-height:1.55;margin:0 0 8px;
+}
+.sd-hide-section .sd-hide-timer{
+  font-family:'Fraunces',serif;font-weight:700;font-size:20px;color:#e9b3a8;
+  margin:0 0 10px;letter-spacing:0.02em;
+}
+.sd-hide-section .sd-hide-actions{display:flex;gap:8px;}
+.sd-hide-section .sd-hide-actions .btn{padding:11px 10px;font-size:13px;}
+.sd-hide-section .btn-hide-now{
+  background:rgba(192,90,75,0.22);border:1px solid rgba(192,90,75,0.55);color:#e9b3a8;
+}
+.sd-hide-section .btn-keep-public{
+  background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#241a08;border:1px solid transparent;
+}
+.sd-hide-done{
+  display:none;margin:0 0 12px;font-size:12.5px;color:var(--ink);
+  background:rgba(255,255,255,0.05);border:1px solid var(--line);border-radius:10px;padding:8px 12px;
+}
+.sd-hide-done.show{display:block;}
+.sd-hide-done.hidden-yes{color:#e9b3a8;border-color:rgba(192,90,75,0.4);}
+.sd-hide-done.hidden-no{color:var(--gold-soft);border-color:rgba(201,162,75,0.4);}
+#hideCardsOverlay{display:none !important;}
+.hide-cards-card{border-color:rgba(192,90,75,0.6);}
+.hide-cards-timer{
+  font-family:'Fraunces',serif;font-weight:700;font-size:36px;color:#e9b3a8;
+  margin:-2px 0 18px;letter-spacing:0.02em;
+}
 
 .handrank-card{width:min(408px,90vw);max-height:72vh;overflow-y:auto;text-align:left;box-shadow:0 24px 60px var(--shadow);}
 /* 드래그 핸들(제목 + 안내문구 + 닫기 버튼) — 족보/최근 기록 공용 */
@@ -589,6 +698,10 @@ input{font-family:inherit;}
   .seat-chips{font-size:10.5px;padding:2px 9px;margin-top:4px;}
   .seat-status{font-size:9px;padding:1px 7px;margin-top:3px;}
   .card{width:32px;height:46px;font-size:13px;}
+  .seat-cards .card{width:38px;height:53px;font-size:14.5px;}
+  .seat-cards.reveal-highlight{gap:16px;}
+  .seat-cards.reveal-highlight .card{transform:scale(1.38);}
+  .reveal-timer-badge{min-width:20px;height:20px;font-size:11px;top:-11px;}
   .hero-hand .card{width:46px;height:66px;font-size:17px;}
   .hero-chips{font-size:13px;padding:4px 13px;}
   .felt-oval{border-width:10px;}
@@ -740,31 +853,62 @@ input{font-family:inherit;}
     <div class="hero-bar">
       <div class="hero-chips" id="heroChips">내 칩 0</div>
       <div class="hero-turn-timer" id="heroTurnTimer">⏱ <span id="heroTurnTimerNum">30</span>초</div>
-      <div class="hero-hand" id="heroHand"></div>
-      <div class="raise-panel" id="raisePanel">
-        <div class="amt-row"><span>레이즈 금액</span><b id="raiseAmtLabel">0</b></div>
-        <input type="range" id="raiseSlider" min="0" max="100" value="0">
-        <div class="raise-quick">
-          <button data-p="0.33">POT 1/3</button>
-          <button data-p="0.5">POT 1/2</button>
-          <button data-p="0.75">POT 3/4</button>
-          <button data-p="1">POT</button>
+      <div class="hero-action-box">
+        <div class="hero-hand" id="heroHand"></div>
+        <div class="raise-panel" id="raisePanel">
+          <div class="amt-row"><span>레이즈 금액</span><b id="raiseAmtLabel">0</b></div>
+          <input type="range" id="raiseSlider" min="0" max="100" value="0">
+          <div class="raise-quick">
+            <button data-p="0.33">POT 1/3</button>
+            <button data-p="0.5">POT 1/2</button>
+            <button data-p="0.75">POT 3/4</button>
+            <button data-p="1">POT</button>
+          </div>
+          <button class="btn act-raise" id="btnRaiseConfirm">이 금액으로 베팅</button>
         </div>
-        <button class="btn act-raise" id="btnRaiseConfirm">이 금액으로 베팅</button>
-      </div>
-      <div class="action-row" id="actionRow">
-        <button class="btn act-fold" id="btnFold">폴드</button>
-        <button class="btn act-check" id="btnCheckCall">체크</button>
-        <button class="btn act-raise" id="btnRaiseToggle">레이즈</button>
-        <button class="btn act-allin" id="btnAllin">올인</button>
+        <div class="action-row" id="actionRow">
+          <button class="btn act-fold" id="btnFold">폴드</button>
+          <button class="btn act-check" id="btnCheckCall">체크</button>
+          <button class="btn act-raise" id="btnRaiseToggle">레이즈</button>
+          <button class="btn act-allin" id="btnAllin">올인</button>
+        </div>
       </div>
     </div>
 
-    <div class="overlay" id="showdownOverlay">
-      <div class="overlay-card">
-        <h2 id="sdTitle">쇼다운</h2>
+    <div class="overlay handrank-overlay" id="showdownOverlay">
+      <div class="overlay-card handrank-card showdown-card" id="showdownCard">
+        <div class="modal-drag-handle">
+          <h2 id="sdTitle">쇼다운 결과</h2>
+          <div class="modal-hint-row">
+            <span class="modal-hint">✥ 드래그해서 이동</span>
+            <button class="modal-close-x" id="btnSdCloseX" aria-label="닫기">✕</button>
+          </div>
+        </div>
+        <div class="hr-opacity-row">
+          <span>투명도</span>
+          <input type="range" id="sdOpacitySlider" min="30" max="100" value="100">
+          <b id="sdOpacityLabel">100%</b>
+        </div>
         <p id="sdBody">결과를 계산하는 중...</p>
+        <div class="sd-hide-section" id="sdHideSection">
+          <p class="sd-hide-msg">내 카드를 다른 플레이어에게 공개할까요?<br>기본은 <b>공개</b>입니다. 비공개를 누르면 패가 보이지 않습니다.</p>
+          <div class="sd-hide-timer" id="sdHideTimer">선택 5초</div>
+          <div class="sd-hide-actions">
+            <button class="btn btn-hide-now" id="btnHideCards">비공개</button>
+            <button class="btn btn-keep-public" id="btnKeepPublic">공개 유지</button>
+          </div>
+        </div>
+        <div class="sd-hide-done" id="sdHideDone"></div>
         <button class="btn btn-primary" id="btnSdClose">확인</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="hideCardsOverlay">
+      <div class="overlay-card hide-cards-card">
+        <h2>🙈 카드 비공개</h2>
+        <p>지금 숨기지 않으면 잠시 후 다른 플레이어에게 내 카드가 크게 공개돼요.</p>
+        <div class="hide-cards-timer" id="hideCardsTimer">5초</div>
+        <button class="btn btn-primary" id="btnHideCardsLegacy">지금 카드 숨기기</button>
       </div>
     </div>
 
@@ -773,6 +917,25 @@ input{font-family:inherit;}
         <h2>게임 종료</h2>
         <p id="goBody"></p>
         <button class="btn btn-primary" id="btnBackLobby">대기실로</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="giveChipsOverlay">
+      <div class="overlay-card">
+        <h2>칩 나눠주기</h2>
+        <p id="gcInfo">칩을 나눠줄까요?</p>
+        <div class="field" style="text-align:left;">
+          <label>전달할 칩 수 (내 보유 <b id="gcMyChips" style="color:var(--gold-soft);">0</b>)</label>
+          <input type="number" id="gcAmount" min="1" step="1" placeholder="예: 500">
+        </div>
+        <div class="btn-row" style="margin-bottom:14px;">
+          <button class="btn btn-ghost" id="gcQuickHalf">절반</button>
+          <button class="btn btn-ghost" id="gcQuickAll">전부</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btnGiveChipsCancel">취소</button>
+          <button class="btn btn-primary" id="btnGiveChipsConfirm">전달하기</button>
+        </div>
       </div>
     </div>
 
@@ -811,6 +974,11 @@ input{font-family:inherit;}
             <span class="modal-hint">✥ 드래그해서 이동</span>
             <button class="modal-close-x" id="btnHistoryCloseX" aria-label="닫기">✕</button>
           </div>
+        </div>
+        <div class="hr-opacity-row">
+          <span>투명도</span>
+          <input type="range" id="histOpacitySlider" min="30" max="100" value="100">
+          <b id="histOpacityLabel">100%</b>
         </div>
         <div class="history-list" id="historyList"></div>
         <button class="btn btn-primary" id="btnHistoryClose">닫기</button>
@@ -977,6 +1145,9 @@ let latestRoom=null;
 let myName='플레이어';
 let isHost=false;
 let heartbeatTimer=null, turnTimerInterval=null, aiTimer=null, autoAdvanceTimer=null;
+const SHOWDOWN_CHOICE_WINDOW_MS=5000; // 공개/비공개를 선택할 수 있는 시간(5초) — 이 동안은 아직 다른 사람에게 보이지 않는다
+const SHOWDOWN_HIGHLIGHT_MS=5000; // 선택 시간이 끝난 뒤, 그 선택에 따라 카드가 보이거나 안 보이는 시간(5초)
+const SHOWDOWN_REVEAL_MS=SHOWDOWN_CHOICE_WINDOW_MS+SHOWDOWN_HIGHLIGHT_MS; // 쇼다운 전체 진행 시간(5+5=10초)
 let toastQueue=[];
 let lastLoggedActionTs=0;
 let publicRoomsRef=null, publicRoomsHandler=null;
@@ -1484,6 +1655,7 @@ async function startHand(room){
     updates['players/'+p.uid+'/totalBet']=0;
     updates['players/'+p.uid+'/hasActed']=false;
     updates['players/'+p.uid+'/cards']= active? [deck.pop(),deck.pop()] : null;
+    updates['players/'+p.uid+'/cardsHidden']=false;
     if(!active) updates['players/'+p.uid+'/folded']=true;
   }
 
@@ -1761,13 +1933,14 @@ async function goToShowdown(room,contenders){
   // 폴드하지 않은 참가자들의 카드는 공개(이미 저장돼있으므로 별도 처리 불필요)
   await roomRef.update(updates);
 
+  // 카드 공개 시간(5초)이 지난 뒤 다음 핸드로 넘어간다
   autoAdvanceTimer=setTimeout(async ()=>{
     const fresh=(await roomRef.get()).val();
     if(!fresh||fresh.status!=='playing') return;
     const remaining=occupiedSeats(fresh).filter(p=>!p.busted && p.chips>0);
     if(remaining.length<2){ await endGame(fresh); return; }
     await startHand(fresh);
-  },5200);
+  }, SHOWDOWN_REVEAL_MS + 400);
 }
 
 async function endGame(room){
@@ -2010,25 +2183,36 @@ function getOrCreateSeatEl(layer,s){
   const statusDiv=document.createElement('div'); statusDiv.className='seat-status'; statusDiv.style.display='none';
   const chipsDiv=document.createElement('div'); chipsDiv.className='seat-chips';
   const cardsRow=document.createElement('div'); cardsRow.className='seat-cards';
+  const cardsWrap=document.createElement('div'); cardsWrap.className='seat-cards-wrap';
+  const revealTimer=document.createElement('div'); revealTimer.className='reveal-timer-badge';
+  cardsWrap.appendChild(cardsRow);
+  cardsWrap.appendChild(revealTimer);
   const betDiv=document.createElement('div'); betDiv.className='bet-chip'; betDiv.style.display='none';
   const turnBar=document.createElement('div'); turnBar.className='turn-bar';
   const turnBarFill=document.createElement('div'); turnBarFill.className='turn-bar-fill';
   turnBar.appendChild(turnBarFill);
   const timerNum=document.createElement('div'); timerNum.className='timer-num';
+  const giveHint=document.createElement('div'); giveHint.className='give-chip-hint'; giveHint.textContent='탭해서 칩 주기';
 
   card.appendChild(dealerBtn);
   card.appendChild(nameDiv);
   card.appendChild(emptyLabel);
   card.appendChild(statusDiv);
   card.appendChild(chipsDiv);
-  card.appendChild(cardsRow);
+  card.appendChild(cardsWrap);
   card.appendChild(betDiv);
   card.appendChild(turnBar);
   card.appendChild(timerNum);
+  card.appendChild(giveHint);
   root.appendChild(card);
   layer.appendChild(root);
 
-  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,statusDiv,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,timerNum,cardsKey:'__init__',turnKey:null,lowTimer:null};
+  root.addEventListener('click',()=>{
+    const uid=root.dataset.uid;
+    if(uid) openGiveChips(uid);
+  });
+
+  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,statusDiv,chipsDiv,cardsRow,revealTimer,betDiv,turnBar,turnBarFill,timerNum,giveHint,cardsKey:'__init__',turnKey:null,lowTimer:null};
   seatElements[s]=obj;
   return obj;
 }
@@ -2040,6 +2224,9 @@ function renderTable(prev,room){
   const players=room.players||{};
   const me=players[myUid];
   mySeatCache = me? me.seat : -1;
+
+  // 쇼다운으로 카드가 서로 열리는 시점 — fold/check/raise/allin 끝에 승패가 갈려 카드가 공개되는 순간
+  const showdownTs = (game.stage==='showdown' && game.lastAction && game.lastAction.type==='showdown') ? (game.lastAction.ts||0) : 0;
 
   const stageNames={lobby:'대기 중',preflop:'프리플랍',flop:'플랍',turn:'턴',river:'리버',showdown:'쇼다운',ended:'게임 종료'};
   document.getElementById('stageBadge').textContent=stageNames[game.stage]||game.stage;
@@ -2071,7 +2258,8 @@ function renderTable(prev,room){
 
     if(!p){
       el.root.classList.add('empty');
-      el.root.classList.remove('folded','turn','hero');
+      el.root.classList.remove('folded','turn','hero','giveable');
+      el.root.dataset.uid='';
       el.nameDiv.style.display='none';
       el.emptyLabel.style.display='block';
       el.statusDiv.style.display='none';
@@ -2079,6 +2267,7 @@ function renderTable(prev,room){
       el.dealerBtn.style.display='none';
       el.betDiv.style.display='none';
       if(el.cardsKey!=='empty'){ el.cardsRow.innerHTML=''; el.cardsKey='empty'; }
+      el.revealTimer.classList.remove('show');
       if(el.turnKey!==null){ clearTimeout(el.lowTimer); el.turnBarFill.style.animation='none'; el.turnBarFill.classList.remove('low'); el.turnKey=null; }
       continue;
     }
@@ -2092,6 +2281,8 @@ function renderTable(prev,room){
     el.root.classList.toggle('turn', isTurnSeat);
     const isHero=p.uid===myUid;
     el.root.classList.toggle('hero', isHero);
+    el.root.dataset.uid=p.uid;
+    el.root.classList.toggle('giveable', !isHero);
 
     el.dealerBtn.style.display = room.dealerSeat===s ? 'flex' : 'none';
     el.nameText.textContent=p.name;
@@ -2117,7 +2308,23 @@ function renderTable(prev,room){
       el.statusDiv.style.display='none';
     }
 
-    const showFace = room.status!=='playing' ? false : (game.stage==='showdown' && !p.folded) || isHero;
+    const showdownElapsed = showdownTs>0 ? (Date.now()-showdownTs) : -1;
+    const withinShowdownReveal = showdownTs>0 && showdownElapsed<SHOWDOWN_REVEAL_MS;
+    // 선택 시간(5초)이 지난 뒤부터 공개/비공개 선택 결과에 따라 카드가 5초 동안 보이거나 안 보인다.
+    // 폴드로 이긴 경우(상대 전원 폴드)에도 카드를 가진 플레이어는 동일하게 선택할 수 있다.
+    const pastChoiceWindow = showdownElapsed>=SHOWDOWN_CHOICE_WINDOW_MS;
+    const autoShow = withinShowdownReveal && pastChoiceWindow && !p.cardsHidden;
+    const showFace = room.status!=='playing' ? false : (isHero || autoShow);
+    // 공개로 확정된 5초 동안 카드를 키우고 노란색 형광 테두리로 강조 + 남은 시간 표시
+    const inRevealHighlight = !isHero && autoShow;
+    el.cardsRow.classList.toggle('reveal-highlight', inRevealHighlight);
+    if(inRevealHighlight){
+      const remainSec=Math.max(1,Math.ceil((SHOWDOWN_REVEAL_MS-showdownElapsed)/1000));
+      el.revealTimer.textContent=remainSec;
+      el.revealTimer.classList.add('show');
+    } else {
+      el.revealTimer.classList.remove('show');
+    }
     const cardsKey = (p.cards? p.cards.join(','):'none')+'|'+showFace;
     if(cardsKey!==el.cardsKey){
       el.cardsRow.innerHTML='';
@@ -2172,6 +2379,9 @@ function renderTable(prev,room){
     if(me && me.cards) me.cards.forEach(c=>heroHand.appendChild(cardEl(c,true)));
     heroCardsKey=heroKey;
   }
+
+  // 카드 비공개 모달 — 쇼다운으로 카드가 서로 열리는 순간부터 5초간만 중앙에 노출된다
+  updateHideCardsButton(me, game, showdownTs);
 
   // 액션 가능 여부
   const myTurn = room.status==='playing' && me && !me.folded && !me.allIn && game.turnSeat===me.seat;
@@ -2327,6 +2537,134 @@ document.getElementById('btnSound').onclick=()=>{
   document.getElementById('btnSound').textContent = en? '🔊':'🔇';
 };
 
+/* ---------------- 쇼다운 카드 공개/비공개 선택 (쇼다운 결과 카드와 함께 표시) ---------------- */
+// 기본값은 공개. 선택 시간(5초) 안에 "비공개"를 누르면 다른 플레이어에게 내 패가 보이지 않는다.
+// 공개 상태인 카드는 쇼다운 동안 크게 확대되고 노란색 형광 테두리로 강조된다.
+// 폴드로 상대가 이긴 경우(상대 전원 폴드)에도 이번 핸드에 카드를 받았다면 동일하게 선택할 수 있다.
+let sdHideChoiceLocked=false; // 이 쇼다운에서 이미 공개/비공개를 확정했는지
+function updateHideCardsButton(me, game, showdownTs){
+  const section=document.getElementById('sdHideSection');
+  const doneEl=document.getElementById('sdHideDone');
+  const timerEl=document.getElementById('sdHideTimer');
+  if(!section) return;
+
+  const elapsed = showdownTs>0 ? (Date.now()-showdownTs) : Infinity;
+  // 폴드로 상대가 이긴 경우(상대 전원 폴드)에도, 카드를 받았던 플레이어라면 공개/비공개를 선택할 수 있다
+  const hasCards = me && me.cards && !me.busted;
+  const canChoose = hasCards && showdownTs>0
+    && elapsed<SHOWDOWN_CHOICE_WINDOW_MS && !me.cardsHidden && !sdHideChoiceLocked;
+
+  // 쇼다운 결과 창에 공개/비공개 버튼은 항상 보이도록 두고, 선택 불가면 비활성화만 한다
+  if(hasCards && showdownTs>0){
+    section.style.display='';
+    section.classList.toggle('is-disabled', !canChoose);
+    if(canChoose){
+      const remaining=Math.max(0,SHOWDOWN_CHOICE_WINDOW_MS-elapsed);
+      if(timerEl) timerEl.textContent='선택 '+Math.ceil(remaining/1000)+'초';
+    } else if(timerEl){
+      timerEl.textContent = me.cardsHidden ? '비공개 확정' : (sdHideChoiceLocked ? '공개 확정' : '선택 종료');
+    }
+  } else {
+    section.style.display='none';
+  }
+
+  if(doneEl && hasCards && showdownTs>0 && elapsed<SHOWDOWN_REVEAL_MS){
+    if(me.cardsHidden){
+      doneEl.textContent='내 카드는 비공개로 유지됩니다.';
+      doneEl.className='sd-hide-done show hidden-yes';
+    } else if(sdHideChoiceLocked || elapsed>=SHOWDOWN_CHOICE_WINDOW_MS){
+      doneEl.textContent='내 카드가 다른 플레이어에게 공개됩니다.';
+      doneEl.className='sd-hide-done show hidden-no';
+    } else {
+      doneEl.classList.remove('show');
+    }
+  } else if(doneEl){
+    doneEl.classList.remove('show');
+  }
+}
+async function setCardsHidden(hidden){
+  if(!roomRef||!myUid) return;
+  const room=latestRoom; const me=room&&room.players&&room.players[myUid];
+  if(!me) return;
+  SFX.click();
+  sdHideChoiceLocked=true;
+  if(hidden){
+    await roomRef.child('players/'+myUid+'/cardsHidden').set(true);
+  }
+  const section=document.getElementById('sdHideSection');
+  if(section) section.classList.add('is-disabled');
+  const doneEl=document.getElementById('sdHideDone');
+  if(doneEl){
+    if(hidden){
+      doneEl.textContent='내 카드는 비공개로 유지됩니다.';
+      doneEl.className='sd-hide-done show hidden-yes';
+    } else {
+      doneEl.textContent='내 카드가 다른 플레이어에게 공개됩니다.';
+      doneEl.className='sd-hide-done show hidden-no';
+    }
+  }
+  const timerEl=document.getElementById('sdHideTimer');
+  if(timerEl) timerEl.textContent = hidden ? '비공개 확정' : '공개 확정';
+}
+document.getElementById('btnHideCards').onclick=()=>setCardsHidden(true);
+document.getElementById('btnKeepPublic').onclick=()=>setCardsHidden(false);
+// 쇼다운 중에는 짧은 주기로 화면을 다시 그려 시간 경과(타이머·카드 강조)를 반영한다
+setInterval(()=>{
+  const room=latestRoom; if(!room||room.status!=='playing') return;
+  if(room.game && room.game.stage==='showdown') renderTable(room,room);
+},250);
+
+/* ---------------- 칩 나눠주기 ---------------- */
+// 파산했든 아니든, 좌석을 탭하면 내 칩에서 상대에게 칩을 나눠줄 수 있다.
+let giveChipsTargetUid=null;
+function openGiveChips(uid){
+  const room=latestRoom; if(!room||!myUid) return;
+  const me=room.players && room.players[myUid];
+  const target=room.players && room.players[uid];
+  if(!me||!target||uid===myUid) return;
+  if(!me.chips || me.chips<=0){ toast('나눠줄 칩이 없어요'); return; }
+  SFX.click();
+  giveChipsTargetUid=uid;
+  document.getElementById('gcInfo').innerHTML =
+    '<b style="color:var(--gold-soft)">'+escapeHtml(target.name)+'</b>님에게 칩을 나눠줍니다 ('+
+    (target.busted? '파산 상태' : fmt(target.chips)+' 칩 보유')+')';
+  document.getElementById('gcMyChips').textContent=fmt(me.chips);
+  const inp=document.getElementById('gcAmount');
+  inp.value=''; inp.max=me.chips;
+  document.getElementById('giveChipsOverlay').classList.add('show');
+}
+document.getElementById('gcQuickHalf').onclick=()=>{
+  const room=latestRoom; const me=room&&myUid&&room.players[myUid]; if(!me) return;
+  document.getElementById('gcAmount').value=Math.max(1,Math.floor(me.chips/2));
+};
+document.getElementById('gcQuickAll').onclick=()=>{
+  const room=latestRoom; const me=room&&myUid&&room.players[myUid]; if(!me) return;
+  document.getElementById('gcAmount').value=me.chips;
+};
+document.getElementById('btnGiveChipsCancel').onclick=()=>{
+  SFX.click();
+  document.getElementById('giveChipsOverlay').classList.remove('show');
+  giveChipsTargetUid=null;
+};
+document.getElementById('btnGiveChipsConfirm').onclick=async ()=>{
+  const uid=giveChipsTargetUid;
+  const room=latestRoom;
+  if(!uid||!room||!roomRef||!myUid) return;
+  const me=room.players[myUid]; const target=room.players[uid];
+  if(!me||!target) return;
+  const amt=Math.floor(Number(document.getElementById('gcAmount').value));
+  if(!amt||amt<=0||amt>me.chips){ toast('전달할 수 있는 칩 수를 확인해주세요'); return; }
+  SFX.click();
+  const updates={};
+  updates['players/'+myUid+'/chips']=me.chips-amt;
+  updates['players/'+uid+'/chips']=(target.chips||0)+amt;
+  if(target.busted && (target.chips||0)+amt>0) updates['players/'+uid+'/busted']=false;
+  await roomRef.update(updates);
+  toast(target.name+'님에게 '+fmt(amt)+' 칩을 전달했어요');
+  document.getElementById('giveChipsOverlay').classList.remove('show');
+  giveChipsTargetUid=null;
+};
+
 /* ---------------- 테마 ---------------- */
 const THEMES=[
   {id:'midnight',name:'미드나잇 골드',swatch:'radial-gradient(circle at 35% 30%, #0f4436, #0a2c22)'},
@@ -2401,99 +2739,170 @@ function buildHandRankList(){
 document.getElementById('btnHandRank').onclick=()=>{
   SFX.click();
   buildHandRankList();
+  restoreModalPos(document.getElementById('handRankCard'));
   document.getElementById('handRankOverlay').classList.add('show');
 };
 document.getElementById('btnHrClose').onclick=()=>{
+  saveModalPos(document.getElementById('handRankCard'));
   document.getElementById('handRankOverlay').classList.remove('show');
 };
 document.getElementById('btnHrCloseX').onclick=()=>{
+  saveModalPos(document.getElementById('handRankCard'));
   document.getElementById('handRankOverlay').classList.remove('show');
 };
 
 document.getElementById('btnHistory').onclick=()=>{
   SFX.click();
   renderHistoryList();
+  restoreModalPos(document.getElementById('historyCard'));
   document.getElementById('historyOverlay').classList.add('show');
 };
 document.getElementById('btnHistoryClose').onclick=()=>{
+  saveModalPos(document.getElementById('historyCard'));
   document.getElementById('historyOverlay').classList.remove('show');
 };
 document.getElementById('btnHistoryCloseX').onclick=()=>{
+  saveModalPos(document.getElementById('historyCard'));
   document.getElementById('historyOverlay').classList.remove('show');
 };
 
-/* 모달 드래그 이동 — 족보/최근 기록 모달 공용 (닫기 버튼 클릭은 드래그로 이어지지 않게 제외) */
+/* 모달 위치 기억 — 닫았다 다시 열어도 같은 자리에 */
+const modalPositions={};
+function saveModalPos(card){
+  if(!card || !card.id) return;
+  if(card.style.left || card.style.top){
+    modalPositions[card.id]={left:card.style.left||'', top:card.style.top||''};
+  }
+}
+function restoreModalPos(card){
+  if(!card || !card.id) return;
+  const p=modalPositions[card.id];
+  if(!p) return;
+  card.style.position='fixed';
+  card.style.margin='0';
+  if(p.left) card.style.left=p.left;
+  if(p.top) card.style.top=p.top;
+}
+
+/* 모달 드래그 이동 — 족보/최근 기록/쇼다운 공용 (닫기 버튼 클릭은 드래그로 이어지지 않게 제외) */
 function setupModalDrag(card){
+  if(!card) return;
   const handle=card.querySelector('.modal-drag-handle');
+  if(!handle) return;
   let dragging=false, startX=0, startY=0, origLeft=0, origTop=0;
-  handle.addEventListener('mousedown',(e)=>{
-    if(e.target.closest('.modal-close-x')) return;
+  function beginDrag(clientX, clientY){
     dragging=true;
     const rect=card.getBoundingClientRect();
     card.style.position='fixed';
     card.style.left=rect.left+'px';
     card.style.top=rect.top+'px';
     card.style.margin='0';
-    startX=e.clientX; startY=e.clientY;
+    startX=clientX; startY=clientY;
     origLeft=rect.left; origTop=rect.top;
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove',(e)=>{
+  }
+  function moveDrag(clientX, clientY){
     if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
+    const dx=clientX-startX, dy=clientY-startY;
     const maxLeft=window.innerWidth-40, maxTop=window.innerHeight-40;
     card.style.left=clamp(origLeft+dx,-card.offsetWidth+60,maxLeft)+'px';
     card.style.top=clamp(origTop+dy,0,maxTop)+'px';
+  }
+  function endDrag(){
+    if(!dragging) return;
+    dragging=false;
+    saveModalPos(card);
+  }
+  handle.addEventListener('mousedown',(e)=>{
+    if(e.target.closest('.modal-close-x')) return;
+    beginDrag(e.clientX, e.clientY);
+    e.preventDefault();
   });
-  window.addEventListener('mouseup',()=>{ dragging=false; });
-  // 터치로도 이동 가능하게
+  window.addEventListener('mousemove',(e)=>moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
   handle.addEventListener('touchstart',(e)=>{
     if(e.target.closest('.modal-close-x')) return;
     const t=e.touches[0];
-    dragging=true;
-    const rect=card.getBoundingClientRect();
-    card.style.position='fixed';
-    card.style.left=rect.left+'px';
-    card.style.top=rect.top+'px';
-    card.style.margin='0';
-    startX=t.clientX; startY=t.clientY;
-    origLeft=rect.left; origTop=rect.top;
+    beginDrag(t.clientX, t.clientY);
   },{passive:true});
   window.addEventListener('touchmove',(e)=>{
     if(!dragging) return;
     const t=e.touches[0];
-    const dx=t.clientX-startX, dy=t.clientY-startY;
-    const maxLeft=window.innerWidth-40, maxTop=window.innerHeight-40;
-    card.style.left=clamp(origLeft+dx,-card.offsetWidth+60,maxLeft)+'px';
-    card.style.top=clamp(origTop+dy,0,maxTop)+'px';
+    moveDrag(t.clientX, t.clientY);
   },{passive:true});
-  window.addEventListener('touchend',()=>{ dragging=false; });
+  window.addEventListener('touchend', endDrag);
 }
 setupModalDrag(document.getElementById('handRankCard'));
 setupModalDrag(document.getElementById('historyCard'));
+setupModalDrag(document.getElementById('showdownCard'));
 
 /* 모달 불투명도 조절 */
-document.getElementById('hrOpacitySlider').addEventListener('input',(e)=>{
-  const v=parseInt(e.target.value,10);
-  document.getElementById('handRankCard').style.opacity=(v/100);
-  document.getElementById('hrOpacityLabel').textContent=v+'%';
-});
+function bindOpacitySlider(sliderId, labelId, cardId){
+  const slider=document.getElementById(sliderId);
+  const label=document.getElementById(labelId);
+  const card=document.getElementById(cardId);
+  if(!slider||!card) return;
+  slider.addEventListener('input',()=>{
+    const v=parseInt(slider.value,10);
+    card.style.opacity=(v/100);
+    if(label) label.textContent=v+'%';
+  });
+}
+bindOpacitySlider('hrOpacitySlider','hrOpacityLabel','handRankCard');
+bindOpacitySlider('histOpacitySlider','histOpacityLabel','historyCard');
+bindOpacitySlider('sdOpacitySlider','sdOpacityLabel','showdownCard');
 
-document.getElementById('btnSdClose').onclick=()=>{
-  document.getElementById('showdownOverlay').classList.remove('show');
-  document.getElementById('showdownOverlay').dataset.locked='';
-};
+function closeShowdownOverlay(){
+  const overlay=document.getElementById('showdownOverlay');
+  const card=document.getElementById('showdownCard');
+  saveModalPos(card);
+  overlay.classList.remove('show');
+  overlay.dataset.locked='';
+}
+document.getElementById('btnSdClose').onclick=()=>{ SFX.click(); closeShowdownOverlay(); };
+document.getElementById('btnSdCloseX').onclick=()=>{ SFX.click(); closeShowdownOverlay(); };
+
+function formatShowdownResults(results, players){
+  return (results||[]).map(r=>{
+    const pl=players && players[r.uid];
+    // 비공개를 선택한 플레이어의 족보는 다른 사람에게 보이지 않게 한다 (본인 화면에서는 그대로 표시)
+    const hideHand = pl && pl.cardsHidden && r.uid!==myUid;
+    const handLabel = hideHand ? '카드 비공개' : (r.hand||'');
+    return `<b style="color:var(--gold-soft)">${escapeHtml(r.name)}</b> — ${escapeHtml(handLabel)} · +${fmt(r.amount)}`;
+  }).join('<br>');
+}
 function showShowdown(results){
   const overlay=document.getElementById('showdownOverlay');
-  if(overlay.dataset.shownFor===JSON.stringify(results)) { return; }
-  overlay.dataset.shownFor=JSON.stringify(results);
-  overlay.dataset.locked='1';
-  document.getElementById('sdTitle').textContent='쇼다운 결과';
-  document.getElementById('sdBody').innerHTML = results.map(r=>`<b style="color:var(--gold-soft)">${escapeHtml(r.name)}</b> — ${escapeHtml(r.hand)} · +${fmt(r.amount)}`).join('<br>');
-  overlay.classList.add('show');
-  const anyWin = results.some(r=>r.uid===myUid);
-  if(anyWin) SFX.win(); else SFX.lose();
-  setTimeout(()=>{ overlay.classList.remove('show'); overlay.dataset.locked=''; },3600);
+  const card=document.getElementById('showdownCard');
+  const room=latestRoom;
+  const players=room && room.players;
+  const key=JSON.stringify(results);
+  const bodyHtml=formatShowdownResults(results, players);
+  if(overlay.dataset.shownFor!==key){
+    overlay.dataset.shownFor=key;
+    overlay.dataset.locked='1';
+    sdHideChoiceLocked=false;
+    document.getElementById('sdTitle').textContent='쇼다운 결과';
+    document.getElementById('sdBody').innerHTML=bodyHtml;
+    // 공개/비공개 선택 영역 초기화 (항상 보이게)
+    const section=document.getElementById('sdHideSection');
+    const doneEl=document.getElementById('sdHideDone');
+    if(section){ section.classList.remove('is-disabled'); }
+    if(doneEl){ doneEl.classList.remove('show'); doneEl.textContent=''; }
+    restoreModalPos(card);
+    overlay.classList.add('show');
+    const anyWin = results.some(r=>r.uid===myUid);
+    if(anyWin) SFX.win(); else SFX.lose();
+    clearTimeout(showShowdown._closeT);
+    showShowdown._closeT=setTimeout(()=>{
+      closeShowdownOverlay();
+    }, SHOWDOWN_REVEAL_MS);
+  } else {
+    document.getElementById('sdBody').innerHTML=bodyHtml;
+    if(!overlay.classList.contains('show') && overlay.dataset.locked==='1'){
+      restoreModalPos(card);
+      overlay.classList.add('show');
+    }
+  }
 }
 
 document.getElementById('btnBackLobby').onclick=async ()=>{
