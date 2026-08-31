@@ -225,12 +225,20 @@ input{font-family:inherit;}
 .shop-item .si-name{font-weight:700;color:var(--cream);font-size:14px;}
 .shop-item .si-desc{font-size:11.5px;color:var(--ink);margin-top:3px;line-height:1.4;}
 .shop-item .si-price{font-family:'Fraunces',serif;color:var(--gold-soft);font-weight:700;font-size:14px;flex-shrink:0;}
-.shop-item .btn{width:auto;padding:8px 14px;font-size:12.5px;flex-shrink:0;}
+.shop-item .btn{width:auto;padding:8px 12px;font-size:12px;flex-shrink:0;}
+.shop-item .si-admin{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.shop-item .si-admin .btn{padding:6px 10px;font-size:11.5px;min-width:52px;}
+.shop-item .si-move{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.shop-item .si-move .btn{padding:4px 8px;font-size:12px;min-width:36px;}
 .shop-admin-box{
   margin-top:14px;padding:14px;border-radius:12px;border:1px dashed rgba(201,162,75,0.45);
   background:rgba(201,162,75,0.06);
 }
 .shop-admin-box h3{margin:0 0 10px;font-size:14px;color:var(--gold-soft);font-family:'Fraunces',serif;}
+.shop-admin-box .admin-edit-hint{font-size:12px;color:var(--ink);margin:-4px 0 10px;display:none;}
+.shop-admin-box .admin-edit-hint.show{display:block;}
+.shop-admin-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.shop-admin-actions .btn{flex:1;min-width:100px;}
 .rank-list{max-height:min(360px,50vh);overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
 .rank-row{
   display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;
@@ -842,7 +850,9 @@ input{font-family:inherit;}
     <div id="shopOwnedList" style="display:none;"></div>
     <div class="hint" id="shopEmpty" style="display:none;margin:8px 0;">표시할 항목이 없습니다.</div>
     <div class="shop-admin-box" id="shopAdminBox" style="display:none;">
-      <h3>관리자 · 상품 등록</h3>
+      <h3 id="shopAdminTitle">관리자 · 상품 등록</h3>
+      <p class="admin-edit-hint" id="shopAdminEditHint">선택한 상품을 수정 중입니다. 저장하면 반영됩니다.</p>
+      <input type="hidden" id="shopEditId" value="">
       <div class="field">
         <label for="shopNewName">물품 이름</label>
         <input id="shopNewName" maxlength="24" placeholder="예: 골드 테마 티켓">
@@ -855,7 +865,10 @@ input{font-family:inherit;}
         <label for="shopNewDesc">설명 (선택)</label>
         <input id="shopNewDesc" maxlength="60" placeholder="짧은 설명">
       </div>
-      <button class="btn btn-primary" id="btnShopAddItem">상품 추가</button>
+      <div class="shop-admin-actions">
+        <button class="btn btn-primary" id="btnShopAddItem">상품 추가</button>
+        <button class="btn btn-ghost" id="btnShopCancelEdit" style="display:none;">수정 취소</button>
+      </div>
     </div>
     <button class="btn btn-primary" id="btnCloseShop" style="margin-top:14px;">닫기</button>
   </div>
@@ -1623,6 +1636,60 @@ document.getElementById('shopTabOwned').onclick=()=>{
   document.getElementById('shopOwnedList').style.display='';
   renderShop();
 };
+function shopItemOrder(it){
+  if(it && typeof it.order==='number') return it.order;
+  // 기존 상품(order 없음)은 createdAt 기준으로 뒤로 정렬
+  return (it && it.createdAt)? it.createdAt : 0;
+}
+function sortShopIds(items){
+  return Object.keys(items||{}).sort((a,b)=>{
+    const oa=shopItemOrder(items[a]), ob=shopItemOrder(items[b]);
+    if(oa!==ob) return oa-ob;
+    return (items[a].createdAt||0)-(items[b].createdAt||0);
+  });
+}
+function clearShopEditForm(){
+  document.getElementById('shopEditId').value='';
+  document.getElementById('shopNewName').value='';
+  document.getElementById('shopNewPrice').value='';
+  document.getElementById('shopNewDesc').value='';
+  document.getElementById('shopAdminTitle').textContent='관리자 · 상품 등록';
+  document.getElementById('shopAdminEditHint').classList.remove('show');
+  document.getElementById('btnShopAddItem').textContent='상품 추가';
+  document.getElementById('btnShopCancelEdit').style.display='none';
+}
+function beginShopEdit(id, it){
+  document.getElementById('shopEditId').value=id;
+  document.getElementById('shopNewName').value=it.name||'';
+  document.getElementById('shopNewPrice').value=it.price||'';
+  document.getElementById('shopNewDesc').value=it.desc||'';
+  document.getElementById('shopAdminTitle').textContent='관리자 · 상품 수정';
+  document.getElementById('shopAdminEditHint').classList.add('show');
+  document.getElementById('btnShopAddItem').textContent='수정 저장';
+  document.getElementById('btnShopCancelEdit').style.display='';
+  document.getElementById('shopAdminBox').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+document.getElementById('btnShopCancelEdit').onclick=()=>clearShopEditForm();
+
+async function moveShopItem(id, dir){
+  if(!isAdminMode||!db) return;
+  const snap=await db.ref('shop/items').get();
+  const items=snap.val()||{};
+  const ids=sortShopIds(items);
+  const idx=ids.indexOf(id);
+  if(idx<0) return;
+  const j=idx+dir;
+  if(j<0||j>=ids.length) return;
+  // order 정규화 후 스왑
+  const updates={};
+  ids.forEach((k,i)=>{ updates[k+'/order']=i*10; });
+  const tmp=updates[ids[idx]+'/order'];
+  updates[ids[idx]+'/order']=updates[ids[j]+'/order'];
+  updates[ids[j]+'/order']=tmp;
+  await db.ref('shop/items').update(updates);
+  renderShop();
+}
+
 async function renderShop(){
   const bal=document.getElementById('shopBalance');
   const empty=document.getElementById('shopEmpty');
@@ -1638,23 +1705,43 @@ async function renderShop(){
     const inv=(myAccount && myAccount.inventory)||{};
     if(shopTab==='catalog'){
       catalogEl.innerHTML='';
-      const ids=Object.keys(items).sort((a,b)=>(items[b].createdAt||0)-(items[a].createdAt||0));
+      const ids=sortShopIds(items);
       if(!ids.length){ empty.style.display='block'; empty.textContent='등록된 상품이 없습니다.'; return; }
-      ids.forEach(id=>{
+      ids.forEach((id, index)=>{
         const it=items[id];
         const row=document.createElement('div'); row.className='shop-item';
-        row.innerHTML='<div class="si-info"><div class="si-name"></div><div class="si-desc"></div></div><div class="si-price"></div>';
-        row.querySelector('.si-name').textContent=it.name||'상품';
-        row.querySelector('.si-desc').textContent=it.desc||'';
-        row.querySelector('.si-price').textContent=fmt(it.price||0)+' 칩';
         if(isAdminMode){
+          const move=document.createElement('div'); move.className='si-move';
+          const up=document.createElement('button'); up.className='btn btn-ghost'; up.textContent='▲'; up.title='위로';
+          up.disabled=index===0;
+          up.onclick=()=>moveShopItem(id,-1);
+          const down=document.createElement('button'); down.className='btn btn-ghost'; down.textContent='▼'; down.title='아래로';
+          down.disabled=index===ids.length-1;
+          down.onclick=()=>moveShopItem(id,1);
+          move.appendChild(up); move.appendChild(down);
+          row.appendChild(move);
+        }
+        const info=document.createElement('div'); info.className='si-info';
+        info.innerHTML='<div class="si-name"></div><div class="si-desc"></div>';
+        info.querySelector('.si-name').textContent=it.name||'상품';
+        info.querySelector('.si-desc').textContent=it.desc||'';
+        row.appendChild(info);
+        const price=document.createElement('div'); price.className='si-price';
+        price.textContent=fmt(it.price||0)+' 칩';
+        row.appendChild(price);
+        if(isAdminMode){
+          const admin=document.createElement('div'); admin.className='si-admin';
+          const edit=document.createElement('button'); edit.className='btn btn-ghost'; edit.textContent='수정';
+          edit.onclick=()=>beginShopEdit(id, it);
           const del=document.createElement('button'); del.className='btn btn-ghost'; del.textContent='삭제';
           del.onclick=async ()=>{
             if(!confirm('이 상품을 삭제할까요?')) return;
             await db.ref('shop/items/'+id).remove();
+            if(document.getElementById('shopEditId').value===id) clearShopEditForm();
             renderShop();
           };
-          row.appendChild(del);
+          admin.appendChild(edit); admin.appendChild(del);
+          row.appendChild(admin);
         }
         const buy=document.createElement('button'); buy.className='btn btn-primary'; buy.textContent='구매';
         buy.onclick=()=>buyShopItem(id, it);
@@ -1705,19 +1792,32 @@ async function buyShopItem(id, it){
   }catch(e){ alert('구매 실패: '+(e.message||e)); }
 }
 document.getElementById('btnShopAddItem').onclick=async ()=>{
-  if(!isAdminMode){ alert('관리자만 상품을 등록할 수 있습니다.'); return; }
+  if(!isAdminMode){ alert('관리자만 상품을 등록/수정할 수 있습니다.'); return; }
   if(!requireReady()) return;
   const name=(document.getElementById('shopNewName').value||'').trim().slice(0,24);
   const price=Math.floor(Number(document.getElementById('shopNewPrice').value)||0);
   const desc=(document.getElementById('shopNewDesc').value||'').trim().slice(0,60);
+  const editId=(document.getElementById('shopEditId').value||'').trim();
   if(!name){ alert('물품 이름을 입력해주세요.'); return; }
   if(price<1){ alert('가격은 1 이상이어야 합니다.'); return; }
-  const id='item_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-  await db.ref('shop/items/'+id).set({name, price, desc, createdAt:Date.now()});
-  document.getElementById('shopNewName').value='';
-  document.getElementById('shopNewPrice').value='';
-  document.getElementById('shopNewDesc').value='';
-  toast('상품이 등록되었습니다');
+  if(editId){
+    await db.ref('shop/items/'+editId).update({name, price, desc, updatedAt:Date.now()});
+    clearShopEditForm();
+    toast('상품이 수정되었습니다');
+  } else {
+    const id='item_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    // 맨 아래에 추가되도록 order 계산
+    let nextOrder=Date.now();
+    try{
+      const snap=await db.ref('shop/items').get();
+      const items=snap.val()||{};
+      const ids=sortShopIds(items);
+      if(ids.length) nextOrder=shopItemOrder(items[ids[ids.length-1]])+10;
+    }catch(e){}
+    await db.ref('shop/items/'+id).set({name, price, desc, createdAt:Date.now(), order:nextOrder});
+    clearShopEditForm();
+    toast('상품이 등록되었습니다');
+  }
   renderShop();
 };
 
