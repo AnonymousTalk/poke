@@ -1161,6 +1161,32 @@ function setupPresence(){
   });
 }
 
+/* ---------------- 방 자동 삭제 (아무도 없으면) ---------------- */
+// 방에 남은 '사람'이 없으면(봇만 있거나 완전히 빈 경우) 방 자체를 삭제한다.
+function isRoomEmptyOfHumans(players){
+  players=players||{};
+  return !Object.values(players).some(p=>!p.isAI);
+}
+function cleanupRoomIfEmpty(ref){
+  if(!ref) return;
+  ref.child('players').get().then(snap=>{
+    if(isRoomEmptyOfHumans(snap.val())) ref.remove().catch(()=>{});
+  }).catch(()=>{});
+}
+// 내가 방에 남은 유일한 사람이라면, 내 연결이 끊기는 순간(탭 닫기 등) 방 전체가 자동 삭제되도록 예약해둔다.
+// 다른 사람이 들어오면 예약을 취소한다.
+function updateAloneDisconnectGuard(room){
+  if(!roomRef||!myUid) return;
+  const players=room.players||{};
+  const humans=Object.entries(players).filter(([u,p])=>!p.isAI);
+  const onlyHumanIsMe=humans.length===1 && humans[0][0]===myUid;
+  if(onlyHumanIsMe){
+    roomRef.onDisconnect().remove();
+  } else {
+    roomRef.onDisconnect().cancel();
+  }
+}
+
 /* ---------------- 방 구독 ---------------- */
 function subscribeRoom(){
   if(unsubRoom) roomRef.off('value',unsubRoom);
@@ -1178,6 +1204,8 @@ function onRoomUpdate(prev,room){
   // 호스트 판별 (재접속/이관 대응)
   isHost = room.hostUid===myUid;
 
+  updateAloneDisconnectGuard(room);
+
   if(room.status==='lobby'){
     renderLobby(room);
     if(document.getElementById('screen-table').classList.contains('active')===false &&
@@ -1192,6 +1220,7 @@ function onRoomUpdate(prev,room){
   maybeHandleFailover(room);
   if(isHost) hostTick(prev,room);
 }
+
 
 /* ---------------- 하트비트 & 호스트 이관 ---------------- */
 const TURN_TIMEOUT_MS=30000;
@@ -1260,7 +1289,7 @@ function renderLobby(room){
       if(isHost && (p.isAI || p.uid!==myUid)){
         const rm=document.createElement('button');
         rm.className='rm'; rm.textContent='내보내기';
-        rm.onclick=()=>{ roomRef.child('players/'+p.uid).remove(); };
+        rm.onclick=()=>{ roomRef.child('players/'+p.uid).remove().then(()=>cleanupRoomIfEmpty(roomRef)); };
         row.appendChild(rm);
       }
     } else {
@@ -1306,8 +1335,12 @@ document.getElementById('btnStartGame').onclick=async ()=>{
 
 function leaveRoom(){
   clearInterval(heartbeatTimer); clearInterval(turnTimerInterval); clearTimeout(aiTimer); clearTimeout(autoAdvanceTimer);
-  if(roomRef && myUid){
-    roomRef.child('players/'+myUid).remove().catch(()=>{});
+  const ref=roomRef;
+  if(ref) ref.onDisconnect().cancel().catch(()=>{});
+  if(ref && myUid){
+    ref.child('players/'+myUid).remove()
+      .then(()=>cleanupRoomIfEmpty(ref))
+      .catch(()=>{});
   }
   if(unsubRoom) roomRef.off('value',unsubRoom);
   roomId=null; roomRef=null; latestRoom=null; isHost=false;
