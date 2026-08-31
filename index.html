@@ -498,13 +498,13 @@ input{font-family:inherit;}
 .handrank-card{width:min(480px,94vw);max-height:82vh;overflow-y:auto;text-align:left;box-shadow:0 24px 60px var(--shadow);}
 .handrank-card h2{
   text-align:center;cursor:move;user-select:none;
-  margin:-6px -6px 10px;padding:8px 6px;border-radius:10px;
+  margin:-6px -6px 14px;padding:10px 6px 14px;border-radius:10px;
 }
 .handrank-card h2::after{
-  content:'✥ 드래그해서 이동';display:inline-block;font-family:'IBM Plex Sans KR',sans-serif;
-  font-size:12px;color:var(--gold-soft);font-weight:600;margin-top:6px;letter-spacing:0.02em;
+  content:'✥ 드래그해서 이동';display:block;font-family:'IBM Plex Sans KR',sans-serif;
+  font-size:12px;color:var(--gold-soft);font-weight:600;margin:10px auto 0;letter-spacing:0.02em;
   background:rgba(201,162,75,0.16);border:1px solid rgba(201,162,75,0.45);
-  border-radius:20px;padding:4px 12px;
+  border-radius:20px;padding:5px 14px;width:fit-content;
 }
 .handrank-card h2:active{background:rgba(255,255,255,0.05);}
 .handrank-card h2:active::after{background:rgba(201,162,75,0.3);}
