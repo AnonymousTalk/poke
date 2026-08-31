@@ -55,7 +55,7 @@ input{font-family:inherit;}
 .screen.active{display:flex;}
 
 /* ---------- Landing ---------- */
-#screen-landing{gap:28px;padding:24px;}
+#screen-landing{gap:22px;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .brand{
   text-align:center;
 }
@@ -135,6 +135,24 @@ input{font-family:inherit;}
 .small-btn{
   background:none;border:none;color:var(--gold-soft);font-size:12.5px;text-decoration:underline;
 }
+.check-row{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink);margin:-4px 0 16px;}
+.check-row input{width:15px;height:15px;accent-color:var(--gold);}
+.room-list{max-height:240px;overflow-y:auto;margin-top:2px;}
+.room-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 12px;border-radius:10px;background:#14100c;border:1px solid var(--line);
+  margin-bottom:8px;transition:border-color .15s ease;
+}
+.room-row:last-child{margin-bottom:0;}
+.room-row:hover{border-color:var(--gold);}
+.room-row .rinfo{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.room-row .rcode{font-family:'Fraunces',serif;color:var(--gold-soft);font-size:15px;letter-spacing:0.08em;}
+.room-row .rmeta{font-size:11px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.room-row .btn-mini{
+  flex-shrink:0;padding:9px 16px;border-radius:9px;font-size:12.5px;font-weight:600;
+  background:linear-gradient(180deg,var(--gold-soft),var(--gold));color:#241a08;border:none;
+}
+.room-row .btn-mini:disabled{opacity:0.4;background:rgba(255,255,255,0.08);color:var(--ink);}
 
 /* ---------- Config gate ---------- */
 #configGate{
@@ -225,10 +243,11 @@ input{font-family:inherit;}
   font-size:11px;color:var(--ink);letter-spacing:0.08em;
 }
 .card{
-  width:40px;height:56px;border-radius:6px;background:var(--cream);
+  width:44px;height:60px;border-radius:7px;background:var(--cream);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:#1a1a1a;
-  box-shadow:0 3px 8px rgba(0,0,0,0.4);
+  font-family:'Fraunces',serif;font-weight:700;font-size:19px;color:#161616;
+  box-shadow:0 3px 10px rgba(0,0,0,0.45);
+  border:1px solid rgba(0,0,0,0.14);
   animation:dealIn .28s ease;
   flex-shrink:0;
 }
@@ -248,14 +267,17 @@ input{font-family:inherit;}
   width:100%;background:rgba(20,16,12,0.86);border:1px solid var(--line);border-radius:12px;
   padding:8px 8px 7px;text-align:center;backdrop-filter:blur(2px);
 }
+.seat.hero .seat-card{border-color:rgba(231,205,140,0.55);box-shadow:0 0 0 1px rgba(231,205,140,0.28);}
 .seat.turn .seat-card{border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,162,75,0.35),0 0 18px rgba(201,162,75,0.35);}
 .seat.folded .seat-card{opacity:0.42;}
 .seat.empty .seat-card{opacity:0.35;border-style:dashed;}
 .seat-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .seat-name .bot{color:var(--gold-soft);font-size:10px;margin-left:3px;}
+.seat.hero .seat-name{color:var(--gold-soft);}
 .seat-chips{font-size:11px;color:var(--gold-soft);margin-top:1px;}
-.seat-cards{display:flex;gap:3px;justify-content:center;margin-top:6px;}
-.seat-cards .card{width:26px;height:37px;font-size:10px;border-radius:4px;}
+.seat-cards{display:flex;gap:4px;justify-content:center;margin-top:6px;}
+.seat-cards .card{width:32px;height:45px;font-size:13px;border-radius:5px;font-weight:700;}
+.seat.hero .seat-cards .card{box-shadow:0 0 0 1px var(--gold-soft),0 3px 10px rgba(0,0,0,0.45);}
 .dealer-btn{
   position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
   background:var(--gold-soft);color:#241a08;font-size:10px;font-weight:700;
@@ -265,6 +287,17 @@ input{font-family:inherit;}
   margin-top:4px;font-size:10.5px;color:#1a1a1a;background:var(--gold-soft);
   border-radius:20px;padding:2px 9px;font-weight:600;display:inline-block;
 }
+.turn-bar{
+  position:absolute;left:10%;right:10%;bottom:-4px;height:3px;border-radius:3px;
+  background:rgba(255,255,255,0.14);overflow:hidden;display:none;
+}
+.seat.turn .turn-bar{display:block;}
+.turn-bar-fill{
+  height:100%;width:100%;transform-origin:left center;
+  background:linear-gradient(90deg,var(--gold-soft),var(--gold));
+}
+.turn-bar-fill.low{background:linear-gradient(90deg,#e18a6f,var(--red));}
+@keyframes turnShrink{from{transform:scaleX(1);}to{transform:scaleX(0);}}
 .timer-ring{
   width:26px;height:26px;position:absolute;top:-10px;left:-10px;
 }
@@ -282,8 +315,12 @@ input{font-family:inherit;}
   padding:10px 12px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);
 }
-.hero-hand{display:flex;gap:8px;}
-.hero-hand .card{width:52px;height:74px;font-size:20px;}
+.hero-hand{display:flex;gap:10px;}
+.hero-hand .card{
+  width:60px;height:84px;font-size:23px;
+  border:2px solid var(--gold-soft);
+  box-shadow:0 6px 18px rgba(0,0,0,0.5),0 0 0 1px rgba(201,162,75,0.25);
+}
 .action-row{display:flex;gap:8px;width:min(560px,96vw);align-items:center;}
 .action-row .btn{padding:12px 8px;font-size:13px;border-radius:12px;}
 .act-fold{background:rgba(192,90,75,0.16);border:1px solid rgba(192,90,75,0.5);color:#e9b3a8;}
@@ -357,6 +394,7 @@ input{font-family:inherit;}
       <label for="nickInput">닉네임</label>
       <input id="nickInput" maxlength="10" placeholder="테이블에서 보일 이름">
     </div>
+    <label class="check-row"><input type="checkbox" id="publicCheck" checked> 만든 방을 아래 목록에 공개하기</label>
     <button class="btn btn-primary" id="btnCreateRoom">방 만들기</button>
     <div class="divider">또는</div>
     <div class="field" style="margin-bottom:10px;">
@@ -368,6 +406,14 @@ input{font-family:inherit;}
       실시간 동기화는 Firebase Realtime Database를 사용합니다.<br>
       처음 실행한다면 <button class="small-btn" id="btnOpenConfig">Firebase 설정 열기</button>
     </div>
+  </div>
+  <div class="landing-card" style="margin-top:-6px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <label style="font-size:12.5px;color:var(--ink);letter-spacing:0.02em;">방을 선택해서 입장하기</label>
+      <button class="small-btn" id="btnRefreshRooms">새로고침</button>
+    </div>
+    <div class="room-list" id="publicRoomList"></div>
+    <div class="hint" id="publicRoomsEmpty">아직 열려 있는 방이 없습니다. 방을 만들어 시작해보세요.</div>
   </div>
 </div>
 
@@ -598,23 +644,24 @@ const SFX=(()=>{
     osc.connect(g); g.connect(c.destination);
     osc.start(t0); osc.stop(t0+dur+0.02);
   }
-  function noiseBurst(dur=0.08,gain=0.12,delay=0){
+  function noiseBurst(dur=0.08,gain=0.12,delay=0,hp=1200){
     if(!enabled) return;
     const c=ac(); const t0=c.currentTime+delay;
-    const bufSize=c.sampleRate*dur;
+    const bufSize=Math.max(1,Math.floor(c.sampleRate*dur));
     const buf=c.createBuffer(1,bufSize,c.sampleRate);
     const data=buf.getChannelData(0);
     for(let i=0;i<bufSize;i++) data[i]=(Math.random()*2-1)*(1-i/bufSize);
     const src=c.createBufferSource(); src.buffer=buf;
     const g=c.createGain(); g.gain.setValueAtTime(gain,t0);
-    const filt=c.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=1200;
+    const filt=c.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=hp;
     src.connect(filt); filt.connect(g); g.connect(c.destination);
     src.start(t0);
   }
   return {
     setEnabled(v){ enabled=v; },
     isEnabled(){ return enabled; },
-    deal(){ noiseBurst(0.05,0.10); tone(700,0.05,'triangle',0.05); },
+    deal(){ noiseBurst(0.045,0.09); tone(720,0.05,'triangle',0.05); },
+    flip(){ noiseBurst(0.035,0.11,0,2200); tone(900,0.04,'triangle',0.05,0.015); },
     chip(){ noiseBurst(0.06,0.14); tone(500,0.06,'square',0.05,0.02); },
     check(){ tone(420,0.08,'sine',0.14); },
     fold(){ tone(260,0.16,'sine',0.12); tone(200,0.18,'sine',0.08,0.05); },
@@ -622,8 +669,12 @@ const SFX=(()=>{
     raise(){ tone(520,0.06,'sawtooth',0.09); tone(680,0.08,'sawtooth',0.09,0.05); tone(840,0.1,'sawtooth',0.09,0.1); },
     allin(){ tone(300,0.1,'sawtooth',0.14); tone(450,0.1,'sawtooth',0.14,0.08); tone(600,0.16,'sawtooth',0.14,0.16); },
     turn(){ tone(880,0.09,'sine',0.10); tone(1100,0.09,'sine',0.08,0.09); },
+    tick(){ tone(1500,0.045,'square',0.06); },
     win(){ [523,659,784,1046].forEach((f,i)=>tone(f,0.22,'triangle',0.12,i*0.09)); },
     lose(){ tone(392,0.2,'sine',0.09); tone(311,0.28,'sine',0.08,0.12); },
+    join(){ tone(660,0.07,'sine',0.11); tone(880,0.09,'sine',0.1,0.06); },
+    leave(){ tone(500,0.09,'sine',0.09); tone(360,0.12,'sine',0.07,0.06); },
+    click(){ tone(1000,0.03,'square',0.05); },
   };
 })();
 
@@ -636,11 +687,63 @@ let isHost=false;
 let heartbeatTimer=null, turnTimerInterval=null, aiTimer=null, autoAdvanceTimer=null;
 let toastQueue=[];
 let lastLoggedActionTs=0;
+let publicRoomsRef=null, publicRoomsHandler=null;
+let lastLobbyPlayerUids=null;
 
 /* ---------------- 화면 전환 ---------------- */
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if(id==='screen-landing') startPublicRoomsListener();
+  else stopPublicRoomsListener();
+}
+
+/* ---------------- 공개 방 목록 ---------------- */
+function startPublicRoomsListener(){
+  if(!db) return;
+  stopPublicRoomsListener();
+  publicRoomsRef=db.ref('rooms').orderByChild('createdAt').limitToLast(40);
+  publicRoomsHandler=(snap)=>{ renderPublicRooms(snap.val()||{}); };
+  publicRoomsRef.on('value',publicRoomsHandler);
+}
+function stopPublicRoomsListener(){
+  if(publicRoomsRef && publicRoomsHandler) publicRoomsRef.off('value',publicRoomsHandler);
+  publicRoomsRef=null; publicRoomsHandler=null;
+}
+function renderPublicRooms(all){
+  const list=document.getElementById('publicRoomList');
+  const emptyHint=document.getElementById('publicRoomsEmpty');
+  if(!list||!emptyHint) return;
+  list.innerHTML='';
+  const rooms=Object.entries(all)
+    .filter(([id,r])=>r && r.status==='lobby' && r.isPublic!==false)
+    .sort((a,b)=>(b[1].createdAt||0)-(a[1].createdAt||0))
+    .slice(0,15);
+  if(rooms.length===0){ emptyHint.style.display='block'; return; }
+  emptyHint.style.display='none';
+  rooms.forEach(([id,r])=>{
+    const players=r.players||{};
+    const count=Object.keys(players).length;
+    const max=r.maxPlayers||8;
+    const hostP=Object.values(players).find(p=>p.seat===0) || Object.values(players)[0];
+    const full=count>=max;
+    const row=document.createElement('div');
+    row.className='room-row';
+    row.innerHTML=`
+      <div class="rinfo">
+        <div class="rcode">${escapeHtml(id)}</div>
+        <div class="rmeta">${hostP?escapeHtml(hostP.name)+' 님의 방 · ':''}${count}/${max}명 · 블라인드 ${r.blinds?r.blinds.sb+'/'+r.blinds.bb:'-'}</div>
+      </div>
+      <button class="btn-mini"${full?' disabled':''}>${full?'가득 참':'입장'}</button>`;
+    if(!full) row.querySelector('.btn-mini').onclick=()=>joinRoomByCode(id);
+    list.appendChild(row);
+  });
+}
+document.getElementById('btnRefreshRooms').onclick=()=>{ startPublicRoomsListener(); };
+
+function resetTableRenderCache(){
+  seatElements={}; commCardsKey='__init__'; heroCardsKey='__init__'; lastLobbyPlayerUids=null;
+  stopTurnCountdown();
 }
 
 /* ---------------- Firebase 초기화 ---------------- */
@@ -653,7 +756,10 @@ function initFirebase(config){
     db=firebase.database();
     auth=firebase.auth();
     auth.onAuthStateChanged(user=>{
-      if(user){ myUid=user.uid; }
+      if(user){
+        myUid=user.uid;
+        if(document.getElementById('screen-landing').classList.contains('active')) startPublicRoomsListener();
+      }
     });
     auth.signInAnonymously().catch(err=>{
       alert('Firebase 인증에 실패했습니다: '+err.message+'\n설정을 다시 확인해주세요.');
@@ -718,6 +824,7 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
     dealerSeat: -1,
     handCount: 0,
     blinds: {sb:10,bb:20},
+    isPublic: document.getElementById('publicCheck').checked,
     players: {
       [myUid]: {name:myName, seat:seat, chips:1000, isAI:false, connected:true, folded:false, allIn:false,
                  currentBet:0, totalBet:0, hasActed:false, busted:false, cards:null, uidJoinedAt:Date.now()}
@@ -726,6 +833,7 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
   };
   roomId=id;
   roomRef=db.ref('rooms/'+id);
+  resetTableRenderCache();
   await roomRef.set(initial);
   isHost=true;
   setupPresence(seat);
@@ -735,9 +843,13 @@ document.getElementById('btnCreateRoom').onclick=async ()=>{
 };
 
 document.getElementById('btnJoinRoom').onclick=async ()=>{
-  if(!requireReady()) return;
   const code=(document.getElementById('codeInput').value||'').trim().toUpperCase();
   if(code.length<4){ alert('초대 코드를 입력해주세요.'); return; }
+  await joinRoomByCode(code);
+};
+
+async function joinRoomByCode(code){
+  if(!requireReady()) return;
   myName=(document.getElementById('nickInput').value||'플레이어').trim().slice(0,10)||'플레이어';
   const ref=db.ref('rooms/'+code);
   const snap=await ref.get();
@@ -747,7 +859,6 @@ document.getElementById('btnJoinRoom').onclick=async ()=>{
   const existing=players[myUid];
   if(!existing){
     const occupied=Object.values(players).map(p=>p.seat);
-    const humanCount=Object.values(players).filter(p=>!p.isAI).length;
     let freeSeat=-1;
     for(let s=0;s<(room.maxPlayers||8);s++){ if(!occupied.includes(s)){ freeSeat=s; break; } }
     if(freeSeat===-1){ alert('방이 가득 찼습니다.'); return; }
@@ -760,10 +871,11 @@ document.getElementById('btnJoinRoom').onclick=async ()=>{
   roomId=code;
   roomRef=ref;
   isHost=false;
+  resetTableRenderCache();
   setupPresence(existing?existing.seat:undefined);
   subscribeRoom();
   showScreen('screen-lobby');
-};
+}
 
 function requireReady(){
   if(!db||!myUid){ alert('Firebase 연결 중입니다. 잠시 후 다시 시도해주세요. (설정이 안 되어 있다면 우측 하단 안내를 확인하세요)'); if(!db) document.getElementById('configGate').classList.add('show'); return false; }
@@ -861,6 +973,12 @@ function renderLobby(room){
   const list=document.getElementById('seatList');
   list.innerHTML='';
   const players=room.players||{};
+  const uids=Object.keys(players);
+  if(lastLobbyPlayerUids){
+    if(uids.some(u=>!lastLobbyPlayerUids.includes(u))) SFX.join();
+    else if(lastLobbyPlayerUids.some(u=>!uids.includes(u))) SFX.leave();
+  }
+  lastLobbyPlayerUids=uids;
   const bySeat={};
   Object.entries(players).forEach(([u,p])=>bySeat[p.seat]={uid:u,...p});
   for(let s=0;s<(room.maxPlayers||8);s++){
@@ -924,6 +1042,7 @@ function leaveRoom(){
   }
   if(unsubRoom) roomRef.off('value',unsubRoom);
   roomId=null; roomRef=null; latestRoom=null; isHost=false;
+  resetTableRenderCache();
   showScreen('screen-landing');
 }
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
@@ -1400,6 +1519,63 @@ function cardEl(card,faceUp,small){
 
 let lastRenderedActionTs=0;
 let mySeatCache=-1;
+let seatElements={};
+let commCardsKey='__init__';
+let heroCardsKey='__init__';
+let turnCountdownTimer=null, turnCountdownWarned=false;
+
+function startTurnCountdown(startedAt){
+  stopTurnCountdown();
+  turnCountdownWarned=false;
+  turnCountdownTimer=setInterval(()=>{
+    const remaining=TURN_TIMEOUT_MS-(Date.now()-(startedAt||Date.now()));
+    if(remaining<=5000 && remaining>0 && !turnCountdownWarned){
+      turnCountdownWarned=true;
+      SFX.tick();
+    }
+    if(remaining<=0) stopTurnCountdown();
+  },500);
+}
+function stopTurnCountdown(){
+  if(turnCountdownTimer){ clearInterval(turnCountdownTimer); turnCountdownTimer=null; }
+}
+
+// 좌석 DOM은 한 번 만들어 재사용한다 (매 렌더마다 다시 만들면 카드 애니메이션이 반복 재생되어 깜박임 발생)
+function getOrCreateSeatEl(layer,s){
+  const cur=seatElements[s];
+  if(cur && layer.contains(cur.root)) return cur;
+  const root=document.createElement('div');
+  root.className='seat';
+  const card=document.createElement('div');
+  card.className='seat-card';
+  card.style.position='relative';
+  const dealerBtn=document.createElement('div'); dealerBtn.className='dealer-btn'; dealerBtn.textContent='D'; dealerBtn.style.display='none';
+  const nameDiv=document.createElement('div'); nameDiv.className='seat-name';
+  const nameText=document.createElement('span');
+  const botBadge=document.createElement('span'); botBadge.className='bot'; botBadge.textContent='AI'; botBadge.style.display='none';
+  nameDiv.appendChild(nameText); nameDiv.appendChild(botBadge);
+  const emptyLabel=document.createElement('div'); emptyLabel.className='seat-name'; emptyLabel.textContent='빈 좌석'; emptyLabel.style.display='none';
+  const chipsDiv=document.createElement('div'); chipsDiv.className='seat-chips';
+  const cardsRow=document.createElement('div'); cardsRow.className='seat-cards';
+  const betDiv=document.createElement('div'); betDiv.className='bet-chip'; betDiv.style.display='none';
+  const turnBar=document.createElement('div'); turnBar.className='turn-bar';
+  const turnBarFill=document.createElement('div'); turnBarFill.className='turn-bar-fill';
+  turnBar.appendChild(turnBarFill);
+
+  card.appendChild(dealerBtn);
+  card.appendChild(nameDiv);
+  card.appendChild(emptyLabel);
+  card.appendChild(chipsDiv);
+  card.appendChild(cardsRow);
+  card.appendChild(betDiv);
+  card.appendChild(turnBar);
+  root.appendChild(card);
+  layer.appendChild(root);
+
+  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,cardsKey:'__init__',turnKey:null,lowTimer:null};
+  seatElements[s]=obj;
+  return obj;
+}
 
 function renderTable(prev,room){
   document.getElementById('tblRoomCode').textContent=roomId||'-----';
@@ -1413,14 +1589,17 @@ function renderTable(prev,room){
   document.getElementById('stageBadge').textContent=stageNames[game.stage]||game.stage;
   document.getElementById('potBadge').textContent='POT '+fmt(game.pot||0);
 
-  // 커뮤니티 카드
+  // 커뮤니티 카드 — 실제로 바뀐 경우에만 다시 그려서 깜박임을 막는다
   const commRow=document.getElementById('communityRow');
-  commRow.innerHTML='';
-  (game.community||[]).forEach(c=>commRow.appendChild(cardEl(c,true)));
+  const commKey=(game.community||[]).join(',');
+  if(commKey!==commCardsKey){
+    commRow.innerHTML='';
+    (game.community||[]).forEach(c=>commRow.appendChild(cardEl(c,true)));
+    commCardsKey=commKey;
+  }
 
-  // 좌석
+  // 좌석 — DOM을 재사용하고, 카드가 실제로 바뀔 때만 다시 그린다
   const layer=document.getElementById('seatsLayer');
-  layer.innerHTML='';
   const heroSeat = mySeatCache>=0? mySeatCache:0;
   const maxSeats=room.maxPlayers||8;
   const bySeat={};
@@ -1430,52 +1609,83 @@ function renderTable(prev,room){
     const rel=(s-heroSeat+8)%8;
     const pos=SEAT_POS[rel];
     const p=bySeat[s];
-    const seatDiv=document.createElement('div');
-    seatDiv.className='seat';
-    seatDiv.style.left=pos.x+'%';
-    seatDiv.style.top=pos.y+'%';
-    if(!p){ seatDiv.classList.add('empty'); seatDiv.innerHTML='<div class="seat-card"><div class="seat-name">빈 좌석</div></div>'; layer.appendChild(seatDiv); continue; }
-    if(p.folded) seatDiv.classList.add('folded');
-    if(game.turnSeat===s && room.status==='playing') seatDiv.classList.add('turn');
+    const el=getOrCreateSeatEl(layer,s);
+    el.root.style.left=pos.x+'%';
+    el.root.style.top=pos.y+'%';
 
-    const card=document.createElement('div');
-    card.className='seat-card';
-    card.style.position='relative';
-
-    if(room.dealerSeat===s){
-      const btn=document.createElement('div'); btn.className='dealer-btn'; btn.textContent='D';
-      card.appendChild(btn);
+    if(!p){
+      el.root.classList.add('empty');
+      el.root.classList.remove('folded','turn','hero');
+      el.nameDiv.style.display='none';
+      el.emptyLabel.style.display='block';
+      el.chipsDiv.style.display='none';
+      el.dealerBtn.style.display='none';
+      el.betDiv.style.display='none';
+      if(el.cardsKey!=='empty'){ el.cardsRow.innerHTML=''; el.cardsKey='empty'; }
+      if(el.turnKey!==null){ clearTimeout(el.lowTimer); el.turnBarFill.style.animation='none'; el.turnBarFill.classList.remove('low'); el.turnKey=null; }
+      continue;
     }
-    const nameDiv=document.createElement('div'); nameDiv.className='seat-name';
-    nameDiv.textContent=p.name; if(p.isAI){ const b=document.createElement('span'); b.className='bot'; b.textContent='AI'; nameDiv.appendChild(b); }
-    card.appendChild(nameDiv);
-    const chipsDiv=document.createElement('div'); chipsDiv.className='seat-chips'; chipsDiv.textContent=(p.busted?'파산':fmt(p.chips)+' 칩');
-    card.appendChild(chipsDiv);
 
-    const cardsRow=document.createElement('div'); cardsRow.className='seat-cards';
+    el.root.classList.remove('empty');
+    el.nameDiv.style.display='';
+    el.emptyLabel.style.display='none';
+    el.chipsDiv.style.display='';
+    el.root.classList.toggle('folded', !!p.folded);
+    const isTurnSeat = game.turnSeat===s && room.status==='playing';
+    el.root.classList.toggle('turn', isTurnSeat);
     const isHero=p.uid===myUid;
-    const showFace = room.status!=='playing' ? false : (game.stage==='showdown' && !p.folded) || (isHero);
-    if(p.cards){
-      p.cards.forEach(c=>cardsRow.appendChild(cardEl(c, showFace, true)));
-    } else {
-      cardsRow.appendChild(cardEl(null,false,true));
-      cardsRow.appendChild(cardEl(null,false,true));
+    el.root.classList.toggle('hero', isHero);
+
+    el.dealerBtn.style.display = room.dealerSeat===s ? 'flex' : 'none';
+    el.nameText.textContent=p.name;
+    el.botBadge.style.display = p.isAI ? 'inline' : 'none';
+    el.chipsDiv.textContent = p.busted? '파산' : fmt(p.chips)+' 칩';
+
+    const showFace = room.status!=='playing' ? false : (game.stage==='showdown' && !p.folded) || isHero;
+    const cardsKey = (p.cards? p.cards.join(','):'none')+'|'+showFace;
+    if(cardsKey!==el.cardsKey){
+      el.cardsRow.innerHTML='';
+      if(p.cards){
+        p.cards.forEach(c=>el.cardsRow.appendChild(cardEl(c, showFace, true)));
+      } else {
+        el.cardsRow.appendChild(cardEl(null,false,true));
+        el.cardsRow.appendChild(cardEl(null,false,true));
+      }
+      el.cardsKey=cardsKey;
     }
-    card.appendChild(cardsRow);
 
     if(p.currentBet>0 && room.status==='playing'){
-      const bet=document.createElement('div'); bet.className='bet-chip'; bet.textContent=fmt(p.currentBet);
-      card.appendChild(bet);
+      el.betDiv.style.display='inline-block';
+      el.betDiv.textContent=fmt(p.currentBet);
+    } else {
+      el.betDiv.style.display='none';
     }
-    seatDiv.appendChild(card);
-    layer.appendChild(seatDiv);
+
+    // 차례 진행 바 (turnStartedAt이 실제로 바뀔 때만 애니메이션을 재시작)
+    const turnKey = isTurnSeat ? (game.turnStartedAt||0) : null;
+    if(turnKey!==el.turnKey){
+      clearTimeout(el.lowTimer);
+      if(turnKey===null){
+        el.turnBarFill.style.animation='none';
+        el.turnBarFill.classList.remove('low');
+      } else {
+        el.turnBarFill.classList.remove('low');
+        el.turnBarFill.style.animation='none';
+        void el.turnBarFill.offsetWidth;
+        el.turnBarFill.style.animation='turnShrink '+(TURN_TIMEOUT_MS/1000)+'s linear forwards';
+        el.lowTimer=setTimeout(()=>{ el.turnBarFill.classList.add('low'); }, Math.max(0,TURN_TIMEOUT_MS-5000));
+      }
+      el.turnKey=turnKey;
+    }
   }
 
-  // 히어로 핸드 (하단 큰 카드)
+  // 히어로 핸드 (하단 큰 카드) — 실제로 바뀐 경우에만 다시 그린다
   const heroHand=document.getElementById('heroHand');
-  heroHand.innerHTML='';
-  if(me && me.cards){
-    me.cards.forEach(c=>heroHand.appendChild(cardEl(c,true)));
+  const heroKey=(me&&me.cards)? me.cards.join(','):'none';
+  if(heroKey!==heroCardsKey){
+    heroHand.innerHTML='';
+    if(me && me.cards) me.cards.forEach(c=>heroHand.appendChild(cardEl(c,true)));
+    heroCardsKey=heroKey;
   }
 
   // 액션 가능 여부
@@ -1499,6 +1709,9 @@ function renderTable(prev,room){
   }
   if(myTurn && (!prev || prev.game.turnSeat!==game.turnSeat)){
     SFX.turn();
+    startTurnCountdown(game.turnStartedAt);
+  } else if(!myTurn){
+    stopTurnCountdown();
   }
 
   // 쇼다운 오버레이
@@ -1530,8 +1743,8 @@ function reactToAction(la,players,room){
     case 'allin-call': SFX.allin(); toast(name+' 올인 콜'); break;
     case 'raise': SFX.raise(); toast(name+' 레이즈 → '+fmt(la.amount||0)); break;
     case 'allin': SFX.allin(); toast(name+' 올인!'); break;
-    case 'street': SFX.chip(); break;
-    case 'runout': SFX.chip(); break;
+    case 'street': SFX.flip(); break;
+    case 'runout': SFX.flip(); break;
     case 'showdown': SFX.win(); break;
   }
 }
@@ -1562,18 +1775,21 @@ function setupRaisePanel(room,me){
   });
 }
 
-document.getElementById('btnFold').onclick=()=>{ document.getElementById('raisePanel').classList.remove('show'); submitAction('fold',0); };
+document.getElementById('btnFold').onclick=()=>{ SFX.click(); document.getElementById('raisePanel').classList.remove('show'); submitAction('fold',0); };
 document.getElementById('btnCheckCall').onclick=()=>{
+  SFX.click();
   document.getElementById('raisePanel').classList.remove('show');
   const room=latestRoom; const me=room.players[myUid];
   const toCall=(room.game.currentBet||0)-(me.currentBet||0);
   submitAction(toCall>0?'call':'check', toCall);
 };
-document.getElementById('btnAllin').onclick=()=>{ document.getElementById('raisePanel').classList.remove('show'); submitAction('allin',0); };
+document.getElementById('btnAllin').onclick=()=>{ SFX.click(); document.getElementById('raisePanel').classList.remove('show'); submitAction('allin',0); };
 document.getElementById('btnRaiseToggle').onclick=()=>{
+  SFX.click();
   document.getElementById('raisePanel').classList.toggle('show');
 };
 document.getElementById('btnRaiseConfirm').onclick=()=>{
+  SFX.click();
   const val=parseInt(document.getElementById('raiseSlider').value,10);
   submitAction('raise',val);
   document.getElementById('raisePanel').classList.remove('show');
