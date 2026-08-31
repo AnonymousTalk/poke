@@ -406,9 +406,16 @@ input{font-family:inherit;}
 }
 .turn-bar-fill.low{background:linear-gradient(90deg,#e18a6f,var(--red));}
 @keyframes turnShrink{from{transform:scaleX(1);}to{transform:scaleX(0);}}
-.timer-ring{
-  width:26px;height:26px;position:absolute;top:-10px;left:-10px;
+.timer-num{
+  width:24px;height:24px;position:absolute;top:-9px;left:-9px;z-index:5;
+  border-radius:50%;background:rgba(0,0,0,0.72);border:1.5px solid var(--gold-soft);
+  display:none;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:700;font-size:12px;color:var(--gold-soft);
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
 }
+.seat.turn .timer-num{display:flex;}
+.timer-num.low{border-color:var(--red);color:#ffcfc4;background:rgba(90,20,15,0.75);animation:timerPulse 1s infinite;}
+@keyframes timerPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.14);}}
 .action-bubble{
   position:absolute;top:-24px;left:50%;transform:translateX(-50%);
   font-size:10.5px;padding:3px 9px;border-radius:20px;white-space:nowrap;
@@ -423,6 +430,14 @@ input{font-family:inherit;}
   padding:10px 12px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(0deg,rgba(0,0,0,0.6),transparent);
 }
+.hero-turn-timer{
+  font-family:'Fraunces',serif;font-weight:700;font-size:13px;color:var(--gold-soft);
+  background:rgba(0,0,0,0.5);border:1px solid rgba(201,162,75,0.5);
+  border-radius:20px;padding:4px 14px;display:none;align-items:center;gap:6px;
+  letter-spacing:0.02em;
+}
+.hero-turn-timer.low{color:#ffcfc4;border-color:var(--red);background:rgba(90,20,15,0.55);animation:timerPulse 1s infinite;}
+.hero-turn-timer.show{display:flex;}
 .hero-chips{
   font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--gold-soft);
   background:rgba(0,0,0,0.55);border:1px solid rgba(201,162,75,0.5);
@@ -675,6 +690,7 @@ input{font-family:inherit;}
 
     <div class="hero-bar">
       <div class="hero-chips" id="heroChips">내 칩 0</div>
+      <div class="hero-turn-timer" id="heroTurnTimer">⏱ <span id="heroTurnTimerNum">30</span>초</div>
       <div class="hero-hand" id="heroHand"></div>
       <div class="raise-panel" id="raisePanel">
         <div class="amt-row"><span>레이즈 금액</span><b id="raiseAmtLabel">0</b></div>
@@ -1842,6 +1858,40 @@ function stopTurnCountdown(){
   if(turnCountdownTimer){ clearInterval(turnCountdownTimer); turnCountdownTimer=null; }
 }
 
+// 좌석 위 숫자 뱃지 + 히어로 액션바 위 초 표시를 매 틱마다 갱신한다.
+function tickTurnTimers(){
+  const room=latestRoom;
+  const heroTimerEl=document.getElementById('heroTurnTimer');
+  const heroNumEl=document.getElementById('heroTurnTimerNum');
+  if(!room || room.status!=='playing'){
+    if(heroTimerEl) heroTimerEl.classList.remove('show','low');
+    return;
+  }
+  const game=room.game||{};
+  const turnSeat = (game.turnSeat!==undefined) ? game.turnSeat : -1;
+  const startedAt=game.turnStartedAt||0;
+  const remainingMs = (turnSeat!==-1 && startedAt) ? Math.max(0,TURN_TIMEOUT_MS-(Date.now()-startedAt)) : 0;
+  const remainingSec = Math.ceil(remainingMs/1000);
+  const isLow = remainingMs<=5000;
+
+  Object.entries(seatElements).forEach(([s,el])=>{
+    if(Number(s)===turnSeat){
+      el.timerNum.textContent=remainingSec;
+      el.timerNum.classList.toggle('low', isLow);
+    }
+  });
+
+  const me=room.players && room.players[myUid];
+  if(heroTimerEl && me && turnSeat===me.seat && !me.folded && !me.allIn){
+    heroTimerEl.classList.add('show');
+    heroTimerEl.classList.toggle('low', isLow);
+    if(heroNumEl) heroNumEl.textContent=remainingSec;
+  } else if(heroTimerEl){
+    heroTimerEl.classList.remove('show','low');
+  }
+}
+setInterval(tickTurnTimers,250);
+
 // 좌석 DOM은 한 번 만들어 재사용한다 (매 렌더마다 다시 만들면 카드 애니메이션이 반복 재생되어 깜박임 발생)
 function getOrCreateSeatEl(layer,s){
   const cur=seatElements[s];
@@ -1864,6 +1914,7 @@ function getOrCreateSeatEl(layer,s){
   const turnBar=document.createElement('div'); turnBar.className='turn-bar';
   const turnBarFill=document.createElement('div'); turnBarFill.className='turn-bar-fill';
   turnBar.appendChild(turnBarFill);
+  const timerNum=document.createElement('div'); timerNum.className='timer-num';
 
   card.appendChild(dealerBtn);
   card.appendChild(nameDiv);
@@ -1873,10 +1924,11 @@ function getOrCreateSeatEl(layer,s){
   card.appendChild(cardsRow);
   card.appendChild(betDiv);
   card.appendChild(turnBar);
+  card.appendChild(timerNum);
   root.appendChild(card);
   layer.appendChild(root);
 
-  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,statusDiv,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,cardsKey:'__init__',turnKey:null,lowTimer:null};
+  const obj={root,card,dealerBtn,nameDiv,nameText,botBadge,emptyLabel,statusDiv,chipsDiv,cardsRow,betDiv,turnBar,turnBarFill,timerNum,cardsKey:'__init__',turnKey:null,lowTimer:null};
   seatElements[s]=obj;
   return obj;
 }
